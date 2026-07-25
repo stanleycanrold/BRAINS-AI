@@ -1,34 +1,79 @@
+import { currentUser } from "@clerk/nextjs/server";
+import { db } from "@/db";
+import { ideas, users } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
+import { IdeaCapture } from "@/components/idea-capture";
 import Link from "next/link";
-import { Plus, Lightbulb } from "lucide-react";
+import { Lightbulb, ArrowRight } from "lucide-react";
 
-export default function DashboardOverview() {
+export default async function DashboardOverview() {
+  const clerkUser = await currentUser();
+  let userIdeas: (typeof ideas.$inferSelect)[] = [];
+
+  if (clerkUser) {
+    const [dbUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.clerkId, clerkUser.id))
+      .limit(1);
+
+    if (dbUser) {
+      userIdeas = await db
+        .select()
+        .from(ideas)
+        .where(eq(ideas.userId, dbUser.id))
+        .orderBy(desc(ideas.updatedAt));
+    }
+  }
+
   return (
-    <div>
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Overview</h1>
-          <p className="mt-1 text-sm text-text-secondary">
-            Your validation workspace
-          </p>
+    <div className="space-y-10">
+      {/* Same idea-capture surface as the landing page */}
+      <div>
+        <h1 className="text-2xl font-bold">
+          Hey{clerkUser?.firstName ? `, ${clerkUser.firstName}` : ""}.
+        </h1>
+        <p className="mt-1 text-sm text-text-secondary">
+          Drop a new idea, or pick up where you left off.
+        </p>
+        <div className="mt-6">
+          <IdeaCapture compact />
         </div>
-        <Link href="/dashboard/ideas/new" className="btn-primary gap-2">
-          <Plus className="h-4 w-4" /> New Idea
-        </Link>
       </div>
 
-      {/* Empty state */}
-      <div className="card flex flex-col items-center justify-center py-20 text-center">
-        <Lightbulb className="mb-4 h-12 w-12 text-text-muted" />
-        <h2 className="text-lg font-semibold text-text-primary">
-          No ideas yet
+      {/* Existing ideas */}
+      <div>
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-text-muted">
+          Your ideas
         </h2>
-        <p className="mt-2 max-w-sm text-sm text-text-secondary">
-          Capture your first idea and start validating. BRAINS will help you
-          structure it into a testable hypothesis.
-        </p>
-        <Link href="/dashboard/ideas/new" className="btn-primary mt-6 gap-2">
-          <Plus className="h-4 w-4" /> Capture your first idea
-        </Link>
+
+        {userIdeas.length === 0 ? (
+          <div className="card flex flex-col items-center justify-center py-16 text-center">
+            <Lightbulb className="mb-4 h-10 w-10 text-text-muted" />
+            <p className="max-w-sm text-sm text-text-secondary">
+              No ideas yet. Capture your first one above — BRAINS will structure
+              it into a testable hypothesis.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {userIdeas.map((idea) => (
+              <Link
+                key={idea.id}
+                href={`/dashboard/ideas/${idea.id}`}
+                className="card flex items-center justify-between transition-colors hover:border-cyan-muted"
+              >
+                <div>
+                  <p className="font-medium text-text-primary">{idea.title}</p>
+                  <p className="mt-1 text-xs text-text-muted">
+                    {idea.status} · {idea.currentStage.replace("_", " ")}
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-text-muted" />
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

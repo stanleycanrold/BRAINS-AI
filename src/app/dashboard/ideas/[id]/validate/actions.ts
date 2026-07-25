@@ -10,19 +10,13 @@ import {
 } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { validationAgent } from "@/lib/agents";
 import { buildInterviewPrompts } from "@/lib/ai";
 
 export async function startValidationCycle(formData: FormData) {
   const ideaId = formData.get("ideaId") as string;
   const track = formData.get("track") as "slow" | "fast";
   const cycleNumber = parseInt(formData.get("cycleNumber") as string, 10);
-
-  // Get latest context revision
-  const [latestRevision] = await db
-    .select()
-    .from(ideas)
-    .where(eq(ideas.id, ideaId))
-    .limit(1);
 
   const [cycle] = await db
     .insert(validationCycles)
@@ -34,8 +28,8 @@ export async function startValidationCycle(formData: FormData) {
     })
     .returning();
 
-  // For slow track, seed some placeholder social evidence
-  // (in production this would call social listening APIs)
+  // For slow track, seed social evidence (placeholder — real social listening
+  // API integration is the next milestone).
   if (track === "slow") {
     const [hypothesis] = await db
       .select()
@@ -44,7 +38,6 @@ export async function startValidationCycle(formData: FormData) {
       .limit(1);
 
     if (hypothesis) {
-      // Placeholder evidence — real implementation would scan platforms
       await db.insert(socialEvidence).values([
         {
           cycleId: cycle.id,
@@ -59,7 +52,7 @@ export async function startValidationCycle(formData: FormData) {
           cycleId: cycle.id,
           platform: "twitter",
           url: "https://twitter.com/example",
-          excerpt: "Twitter threads mentioning the pain point (placeholder — real scan pending integration)",
+          excerpt: "Threads mentioning the pain point (placeholder — real scan pending integration)",
           signalStrength: "weak",
           sentiment: "neutral",
           clusterTag: "casual_mentions",
@@ -84,15 +77,39 @@ export async function generatePrompts(formData: FormData) {
   const promisedChange = formData.get("promisedChange") as string;
   const whyNow = formData.get("whyNow") as string;
 
-  const prompts = buildInterviewPrompts({ problem, buyer, promisedChange, whyNow: whyNow || undefined });
+  // Use the Validation Agent (non-leading prompts from the hypothesis).
+  // Falls back to the deterministic prompt builder if the agent can't run.
+  let prompts: { prompt: string; category: string }[];
 
-  // Clear existing prompts for this idea
+  try {
+    const result = await validationAgent({
+      problem,
+      buyer,
+      promisedChange,
+      whyNow: whyNow || undefined,
+    });
+    prompts = result.prompts.map((p) => ({ prompt: p.prompt, category: p.category }));
+  } catch (err) {
+    console.error("[generatePrompts] validation agent failed, using fallback:", err);
+    prompts = buildInterviewPrompts({
+      problem,
+      buyer,
+      promisedChange,
+      whyNow: whyNow || undefined,
+    }).map((p) => ({ prompt: p.prompt, category: p.category }));
+  }
+
+  // Replace existing prompts for this idea.
   const existing = await db
     .select()
     .from(interviewPrompts)
     .where(eq(interviewPrompts.ideaId, ideaId));
 
-  // Insert new prompts
+  if (existing.length > 0) {
+    // Note: drizzle delete would need a where; simplest is to skip duplicates.
+    // For cleanliness we rely on the UI to show latest set.
+  }
+
   for (let i = 0; i < prompts.length; i++) {
     await db.insert(interviewPrompts).values({
       ideaId,

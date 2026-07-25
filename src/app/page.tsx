@@ -1,44 +1,66 @@
-import Link from "next/link";
-import { Brain, ArrowRight } from "lucide-react";
+import { IdeaCapture } from "@/components/idea-capture";
+import { LandingNav } from "@/components/landing-nav";
+import { Brain, Search, MessageSquareText, TrendingUp } from "lucide-react";
+
+const steps = [
+  {
+    icon: Brain,
+    title: "Capture",
+    desc: "Type your raw idea. BRAINS structures it into a testable hypothesis and surfaces the riskiest assumptions.",
+  },
+  {
+    icon: Search,
+    title: "Research",
+    desc: "An AI agent scans the problem space and proposes grounded improvements — each with a reason.",
+  },
+  {
+    icon: MessageSquareText,
+    title: "Validate",
+    desc: "Non-leading interview prompts and signal scoring. Evidence, not opinions.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Decide",
+    desc: "A decision-grade verdict with confidence and AI next steps: build, pivot, or kill.",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6">
-      <div className="w-full max-w-sm space-y-8">
-        {/* Logo */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-bg-border bg-bg-surface">
-            <Brain className="h-7 w-7 text-cyan" />
-          </div>
-          <div className="text-center">
-            <h1 className="text-xl font-bold tracking-tight">
-              <span className="text-cyan">BRAINS</span>
-              <span className="text-text-muted"> AI</span>
-            </h1>
-            <p className="mt-1 text-xs text-text-muted">
-              Validate before you build
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen">
+      <LandingNav />
 
-        {/* Auth actions */}
-        <div className="space-y-3">
-          <Link href="/sign-up" className="btn-primary w-full gap-2">
-            Create an account <ArrowRight className="h-4 w-4" />
-          </Link>
-          <Link
-            href="/sign-in"
-            className="btn-secondary w-full"
-          >
-            Sign in
-          </Link>
-        </div>
-
-        {/* Footer */}
-        <p className="text-center text-xs text-text-muted">
-          Capture. Validate. Decide.
+      {/* Hero + idea capture */}
+      <section className="mx-auto max-w-2xl px-6 py-16 text-center md:py-24">
+        <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
+          Validate before you build.
+        </h1>
+        <p className="mx-auto mt-4 max-w-lg text-text-secondary">
+          BRAINS is the 0→1 validation engine. Bring a raw idea — AI agents
+          structure, research, and validate it with evidence, not documents.
         </p>
-      </div>
+
+        <div className="mt-10 text-left">
+          <IdeaCapture />
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="mx-auto max-w-4xl px-6 pb-24">
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+          {steps.map((s) => (
+            <div key={s.title} className="card space-y-2">
+              <s.icon className="h-5 w-5 text-cyan" />
+              <h3 className="text-sm font-semibold">{s.title}</h3>
+              <p className="text-xs text-text-secondary">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <footer className="px-6 py-8 text-center text-xs text-text-muted">
+        Capture. Validate. Decide.
+      </footer>
     </div>
   );
 }
