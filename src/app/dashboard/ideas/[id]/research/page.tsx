@@ -5,8 +5,8 @@ import { ideas, ideaContextRevisions, researchRuns, researchSuggestions } from "
 import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, FlaskConical, Sparkles } from "lucide-react";
-import { runResearch } from "./actions";
+import { ArrowLeft, FlaskConical } from "lucide-react";
+import { ResearchForm } from "@/components/research-form";
 
 export default async function ResearchPage({
   params,
@@ -26,6 +26,17 @@ export default async function ResearchPage({
     .limit(1);
 
   const runs = await db.select().from(researchRuns).where(eq(researchRuns.ideaId, id));
+
+  // Pre-fetch suggestions for all runs (can't use async in JSX map).
+  const runsWithSuggestions = await Promise.all(
+    runs.map(async (run) => {
+      const suggestions = await db
+        .select()
+        .from(researchSuggestions)
+        .where(eq(researchSuggestions.researchRunId, run.id));
+      return { run, suggestions };
+    }),
+  );
 
   return (
     <div>
@@ -52,74 +63,67 @@ export default async function ResearchPage({
           <div>
             <h2 className="font-semibold">Run a research pass</h2>
             <p className="mt-1 text-sm text-text-secondary">
-              Web + social scan for the problem space, existing solutions, and market signals.
-              AI will propose concrete changes to strengthen your idea.
+              AI analyzes your problem space and proposes concrete changes to strengthen your idea.
             </p>
           </div>
-          <form action={runResearch}>
-            <input type="hidden" name="ideaId" value={id} />
-            <button type="submit" className="btn-primary gap-2">
-              <Sparkles className="h-4 w-4" /> Run research
-            </button>
-          </form>
+          <ResearchForm ideaId={id} />
         </div>
       </div>
 
       {/* Research runs */}
-      {runs.length > 0 ? (
+      {runsWithSuggestions.length > 0 ? (
         <div className="space-y-6">
-          {runs.map(async (run) => {
-            const suggestions = await db
-              .select()
-              .from(researchSuggestions)
-              .where(eq(researchSuggestions.researchRunId, run.id));
-
-            return (
-              <div key={run.id} className="card">
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <span className="font-medium capitalize">{run.type} research</span>
-                    <span className="ml-3 text-xs text-text-muted">
-                      {new Date(run.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <span className={`rounded-full border px-3 py-0.5 text-xs ${
-                    run.status === "completed"
-                      ? "border-cyan/40 text-cyan"
-                      : "border-bg-border text-text-muted"
-                  }`}>
-                    {run.status}
+          {runsWithSuggestions.map(({ run, suggestions }) => (
+            <div key={run.id} className="card">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <span className="font-medium capitalize">{run.type} research</span>
+                  <span className="ml-3 text-xs text-text-muted">
+                    {new Date(run.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
-
-                {suggestions.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-semibold text-text-muted">Suggestions</h3>
-                    {suggestions.map((s) => (
-                      <div key={s.id} className="card-elevated">
-                        <p className="text-sm text-text-primary">{s.suggestion}</p>
-                        {s.rationale && (
-                          <p className="mt-2 text-xs text-text-secondary">
-                            <span className="text-cyan">Why:</span> {s.rationale}
-                          </p>
-                        )}
-                        {s.sourceUrl && (
-                          <a
-                            href={s.sourceUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-2 inline-block text-xs text-cyan hover:underline"
-                          >
-                            Source →
-                          </a>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <span className={`rounded-full border px-3 py-0.5 text-xs ${
+                  run.status === "completed"
+                    ? "border-cyan/40 text-cyan"
+                    : "border-bg-border text-text-muted"
+                }`}>
+                  {run.status}
+                </span>
               </div>
-            );
-          })}
+
+              {suggestions.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-text-muted">Suggestions</h3>
+                  {suggestions.map((s) => (
+                    <div key={s.id} className="card-elevated">
+                      <p className="text-sm text-text-primary">{s.suggestion}</p>
+                      {s.rationale && (
+                        <p className="mt-2 text-xs text-text-secondary">
+                          <span className="text-cyan">Why:</span> {s.rationale}
+                        </p>
+                      )}
+                      {s.sourceUrl && (
+                        <a
+                          href={s.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-block text-xs text-cyan hover:underline"
+                        >
+                          Source →
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       ) : (
         <div className="card flex flex-col items-center justify-center py-16 text-center">
