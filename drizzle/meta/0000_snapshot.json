@@ -1,5 +1,5 @@
 {
-  "id": "9a80693d-d1b0-48e4-887f-39cb6de05864",
+  "id": "645b84c6-6daa-44c3-865b-03ce13a8afc3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -29,16 +29,14 @@
         },
         "risk": {
           "name": "risk",
-          "type": "assumption_risk",
-          "typeSchema": "public",
+          "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true,
           "default": "'medium'"
         },
         "uncertainty": {
           "name": "uncertainty",
-          "type": "assumption_risk",
-          "typeSchema": "public",
+          "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true,
           "default": "'medium'"
@@ -79,8 +77,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.decisions": {
-      "name": "decisions",
+    "public.fast_track_orders": {
+      "name": "fast_track_orders",
       "schema": "",
       "columns": {
         "id": {
@@ -90,96 +88,68 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "idea_id": {
-          "name": "idea_id",
+        "cycle_id": {
+          "name": "cycle_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "cycle": {
-          "name": "cycle",
+        "interviewee_count": {
+          "name": "interviewee_count",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": 0
         },
-        "outcome": {
-          "name": "outcome",
-          "type": "decision_outcome",
-          "typeSchema": "public",
+        "expert_count": {
+          "name": "expert_count",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": 0
         },
-        "evidence_ref": {
-          "name": "evidence_ref",
-          "type": "jsonb",
+        "per_interviewee_rate": {
+          "name": "per_interviewee_rate",
+          "type": "numeric(10, 2)",
           "primaryKey": false,
           "notNull": false
         },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
+        "expert_rate": {
+          "name": "expert_rate",
+          "type": "numeric(10, 2)",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "decisions_idea_id_ideas_id_fk": {
-          "name": "decisions_idea_id_ideas_id_fk",
-          "tableFrom": "decisions",
-          "tableTo": "ideas",
-          "columnsFrom": [
-            "idea_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.experiments": {
-      "name": "experiments",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": false
         },
-        "idea_id": {
-          "name": "idea_id",
-          "type": "uuid",
+        "analysis_fee": {
+          "name": "analysis_fee",
+          "type": "numeric(10, 2)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
-        "type": {
-          "name": "type",
-          "type": "experiment_type",
-          "typeSchema": "public",
+        "total_estimate": {
+          "name": "total_estimate",
+          "type": "numeric(10, 2)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'USD'"
         },
         "status": {
           "name": "status",
-          "type": "experiment_status",
+          "type": "order_status",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'draft'"
+          "default": "'quoted'"
         },
-        "results": {
-          "name": "results",
-          "type": "jsonb",
+        "eta": {
+          "name": "eta",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
@@ -190,22 +160,27 @@
           "notNull": true,
           "default": "now()"
         },
-        "updated_at": {
-          "name": "updated_at",
+        "approved_at": {
+          "name": "approved_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": false
+        },
+        "delivered_at": {
+          "name": "delivered_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "experiments_idea_id_ideas_id_fk": {
-          "name": "experiments_idea_id_ideas_id_fk",
-          "tableFrom": "experiments",
-          "tableTo": "ideas",
+        "fast_track_orders_cycle_id_validation_cycles_id_fk": {
+          "name": "fast_track_orders_cycle_id_validation_cycles_id_fk",
+          "tableFrom": "fast_track_orders",
+          "tableTo": "validation_cycles",
           "columnsFrom": [
-            "idea_id"
+            "cycle_id"
           ],
           "columnsTo": [
             "id"
@@ -260,14 +235,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "hypothesis_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'draft'"
         },
         "created_at": {
           "name": "created_at",
@@ -329,6 +296,32 @@
           "primaryKey": false,
           "notNull": true
         },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "product_desc": {
+          "name": "product_desc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stage": {
+          "name": "stage",
+          "type": "idea_stage",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'idea'"
+        },
+        "target_user": {
+          "name": "target_user",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "problem": {
           "name": "problem",
           "type": "text",
@@ -353,8 +346,20 @@
           "primaryKey": false,
           "notNull": false
         },
-        "metadata": {
-          "name": "metadata",
+        "traction": {
+          "name": "traction",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "competitors": {
+          "name": "competitors",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assets": {
+          "name": "assets",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
@@ -412,33 +417,17 @@
           "primaryKey": false,
           "notNull": true
         },
-        "problem": {
-          "name": "problem",
-          "type": "text",
+        "current_stage": {
+          "name": "current_stage",
+          "type": "idea_stage",
+          "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false
-        },
-        "audience": {
-          "name": "audience",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "solution": {
-          "name": "solution",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "why_now": {
-          "name": "why_now",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "'idea'"
         },
         "status": {
           "name": "status",
-          "type": "hypothesis_status",
+          "type": "idea_status",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
@@ -481,8 +470,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.signals": {
-      "name": "signals",
+    "public.interview_prompts": {
+      "name": "interview_prompts",
       "schema": "",
       "columns": {
         "id": {
@@ -492,28 +481,127 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "experiment_id": {
-          "name": "experiment_id",
+        "idea_id": {
+          "name": "idea_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "ladder": {
-          "name": "ladder",
-          "type": "signal_ladder",
+        "prompt": {
+          "name": "prompt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "interview_prompts_idea_id_ideas_id_fk": {
+          "name": "interview_prompts_idea_id_ideas_id_fk",
+          "tableFrom": "interview_prompts",
+          "tableTo": "ideas",
+          "columnsFrom": [
+            "idea_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.interviews": {
+      "name": "interviews",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "interview_type",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
-        "score": {
-          "name": "score",
-          "type": "integer",
+        "status": {
+          "name": "status",
+          "type": "interview_status",
+          "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "'scheduled'"
         },
         "notes": {
           "name": "notes",
-          "type": "text",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "signal_strength": {
+          "name": "signal_strength",
+          "type": "signal_strength",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tags": {
+          "name": "tags",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "analyst_id": {
+          "name": "analyst_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scheduled_at": {
+          "name": "scheduled_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
@@ -527,12 +615,262 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "signals_experiment_id_experiments_id_fk": {
-          "name": "signals_experiment_id_experiments_id_fk",
-          "tableFrom": "signals",
-          "tableTo": "experiments",
+        "interviews_order_id_fast_track_orders_id_fk": {
+          "name": "interviews_order_id_fast_track_orders_id_fk",
+          "tableFrom": "interviews",
+          "tableTo": "fast_track_orders",
           "columnsFrom": [
-            "experiment_id"
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.research_runs": {
+      "name": "research_runs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "idea_id": {
+          "name": "idea_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "context_revision_id": {
+          "name": "context_revision_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "research_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "research_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "findings": {
+          "name": "findings",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "research_runs_idea_id_ideas_id_fk": {
+          "name": "research_runs_idea_id_ideas_id_fk",
+          "tableFrom": "research_runs",
+          "tableTo": "ideas",
+          "columnsFrom": [
+            "idea_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "research_runs_context_revision_id_idea_context_revisions_id_fk": {
+          "name": "research_runs_context_revision_id_idea_context_revisions_id_fk",
+          "tableFrom": "research_runs",
+          "tableTo": "idea_context_revisions",
+          "columnsFrom": [
+            "context_revision_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.research_suggestions": {
+      "name": "research_suggestions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "research_run_id": {
+          "name": "research_run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "suggestion": {
+          "name": "suggestion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rationale": {
+          "name": "rationale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "suggestion_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'proposed'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "research_suggestions_research_run_id_research_runs_id_fk": {
+          "name": "research_suggestions_research_run_id_research_runs_id_fk",
+          "tableFrom": "research_suggestions",
+          "tableTo": "research_runs",
+          "columnsFrom": [
+            "research_run_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.social_evidence": {
+      "name": "social_evidence",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "cycle_id": {
+          "name": "cycle_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "platform": {
+          "name": "platform",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "excerpt": {
+          "name": "excerpt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "signal_strength": {
+          "name": "signal_strength",
+          "type": "signal_strength",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sentiment": {
+          "name": "sentiment",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cluster_tag": {
+          "name": "cluster_tag",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "social_evidence_cycle_id_validation_cycles_id_fk": {
+          "name": "social_evidence_cycle_id_validation_cycles_id_fk",
+          "tableFrom": "social_evidence",
+          "tableTo": "validation_cycles",
+          "columnsFrom": [
+            "cycle_id"
           ],
           "columnsTo": [
             "id"
@@ -606,29 +944,294 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
+    },
+    "public.validation_cycles": {
+      "name": "validation_cycles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "idea_id": {
+          "name": "idea_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "context_revision_id": {
+          "name": "context_revision_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cycle_number": {
+          "name": "cycle_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "track": {
+          "name": "track",
+          "type": "validation_track",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "validation_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "verdict": {
+          "name": "verdict",
+          "type": "verdict",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "confidence": {
+          "name": "confidence",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "validation_cycles_idea_id_ideas_id_fk": {
+          "name": "validation_cycles_idea_id_ideas_id_fk",
+          "tableFrom": "validation_cycles",
+          "tableTo": "ideas",
+          "columnsFrom": [
+            "idea_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "validation_cycles_context_revision_id_idea_context_revisions_id_fk": {
+          "name": "validation_cycles_context_revision_id_idea_context_revisions_id_fk",
+          "tableFrom": "validation_cycles",
+          "tableTo": "idea_context_revisions",
+          "columnsFrom": [
+            "context_revision_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.verdicts": {
+      "name": "verdicts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "cycle_id": {
+          "name": "cycle_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verdict": {
+          "name": "verdict",
+          "type": "verdict",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confidence": {
+          "name": "confidence",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evidence_summary": {
+          "name": "evidence_summary",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "signal_distribution": {
+          "name": "signal_distribution",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "next_steps": {
+          "name": "next_steps",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "released_at": {
+          "name": "released_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewed_by": {
+          "name": "reviewed_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "verdicts_cycle_id_validation_cycles_id_fk": {
+          "name": "verdicts_cycle_id_validation_cycles_id_fk",
+          "tableFrom": "verdicts",
+          "tableTo": "validation_cycles",
+          "columnsFrom": [
+            "cycle_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {
-    "public.assumption_risk": {
-      "name": "assumption_risk",
+    "public.idea_stage": {
+      "name": "idea_stage",
       "schema": "public",
       "values": [
-        "low",
+        "idea",
+        "prototype",
+        "live_product"
+      ]
+    },
+    "public.idea_status": {
+      "name": "idea_status",
+      "schema": "public",
+      "values": [
+        "draft",
+        "captured",
+        "researching",
+        "validating",
+        "validated",
+        "iterating",
+        "archived"
+      ]
+    },
+    "public.interview_status": {
+      "name": "interview_status",
+      "schema": "public",
+      "values": [
+        "scheduled",
+        "completed",
+        "cancelled",
+        "no_show"
+      ]
+    },
+    "public.interview_type": {
+      "name": "interview_type",
+      "schema": "public",
+      "values": [
+        "interviewee",
+        "expert"
+      ]
+    },
+    "public.order_status": {
+      "name": "order_status",
+      "schema": "public",
+      "values": [
+        "quoted",
+        "approved",
+        "in_progress",
+        "delivered",
+        "cancelled"
+      ]
+    },
+    "public.research_status": {
+      "name": "research_status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "running",
+        "completed",
+        "failed"
+      ]
+    },
+    "public.research_type": {
+      "name": "research_type",
+      "schema": "public",
+      "values": [
+        "web",
+        "social"
+      ]
+    },
+    "public.signal_strength": {
+      "name": "signal_strength",
+      "schema": "public",
+      "values": [
+        "weak",
         "medium",
-        "high"
+        "strong"
       ]
     },
-    "public.decision_outcome": {
-      "name": "decision_outcome",
+    "public.suggestion_status": {
+      "name": "suggestion_status",
       "schema": "public",
       "values": [
-        "kill",
-        "pivot",
-        "build"
+        "proposed",
+        "accepted",
+        "rejected"
       ]
     },
-    "public.experiment_status": {
-      "name": "experiment_status",
+    "public.validation_status": {
+      "name": "validation_status",
       "schema": "public",
       "values": [
         "draft",
@@ -637,34 +1240,23 @@
         "abandoned"
       ]
     },
-    "public.experiment_type": {
-      "name": "experiment_type",
+    "public.validation_track": {
+      "name": "validation_track",
       "schema": "public",
       "values": [
-        "interview",
-        "waitlist",
-        "landing",
-        "pilot"
+        "slow",
+        "fast"
       ]
     },
-    "public.hypothesis_status": {
-      "name": "hypothesis_status",
+    "public.verdict": {
+      "name": "verdict",
       "schema": "public",
       "values": [
-        "draft",
-        "active",
-        "validated",
-        "invalidated",
-        "archived"
-      ]
-    },
-    "public.signal_ladder": {
-      "name": "signal_ladder",
-      "schema": "public",
-      "values": [
-        "weak",
-        "medium",
-        "strong"
+        "strong_yes",
+        "lean_yes",
+        "mixed",
+        "lean_no",
+        "strong_no"
       ]
     }
   },
