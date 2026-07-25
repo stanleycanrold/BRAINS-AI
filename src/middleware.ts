@@ -15,7 +15,8 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    "/((?!.*\\..*|_next).*)",
+    // Match all paths except static files, _next, and the public survey route.
+    "/((?!_next|.*\\..*|s/).*)",
     "/",
     "/(api|trpc)(.*)",
   ],

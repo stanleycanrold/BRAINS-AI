@@ -1,10 +1,20 @@
 import { db } from "@/db";
-import { ideas, ideaContextRevisions, validationCycles, hypotheses } from "@/db/schema";
+import {
+  ideas,
+  validationCycles,
+  hypotheses,
+  surveys,
+  surveyQuestions,
+  surveyResponses,
+  surveyAnalyses,
+} from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Target, Zap, Clock, TrendingUp } from "lucide-react";
-import { startValidationCycle, generatePrompts } from "./actions";
+import { ArrowLeft, Target, Zap, Clock } from "lucide-react";
+import { headers } from "next/headers";
+import { SurveyWorkspace } from "@/components/survey-workspace";
+import { startValidationCycle } from "./actions";
 
 export default async function ValidatePage({
   params,
@@ -12,6 +22,12 @@ export default async function ValidatePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const headerList = await headers();
+  const origin = headerList.get("x-forwarded-host")
+    ? `https://${headerList.get("x-forwarded-host")}`
+    : headerList.get("host")
+      ? `https://${headerList.get("host")}`
+      : "http://localhost:3000";
 
   const [idea] = await db.select().from(ideas).where(eq(ideas.id, id)).limit(1);
   if (!idea) notFound();
@@ -29,6 +45,44 @@ export default async function ValidatePage({
     .orderBy(desc(validationCycles.cycleNumber));
 
   const nextCycleNumber = (cycles[0]?.cycleNumber ?? 0) + 1;
+  const latestCycle = cycles[0];
+
+  // Load the latest cycle's survey (if any).
+  let survey: typeof surveys.$inferSelect | null = null;
+  let questions: (typeof surveyQuestions.$inferSelect)[] = [];
+  let responseCount = 0;
+  let analysis: (typeof surveyAnalyses.$inferSelect)[] = [];
+
+  if (latestCycle) {
+    const [s] = await db
+      .select()
+      .from(surveys)
+      .where(eq(surveys.cycleId, latestCycle.id))
+      .limit(1);
+
+    if (s) {
+      survey = s;
+      questions = await db
+        .select()
+        .from(surveyQuestions)
+        .where(eq(surveyQuestions.surveyId, s.id))
+        .orderBy(surveyQuestions.order);
+
+      const responses = await db
+        .select()
+        .from(surveyResponses)
+        .where(eq(surveyResponses.surveyId, s.id));
+      responseCount = responses.length;
+
+      analysis = await db
+        .select()
+        .from(surveyAnalyses)
+        .where(eq(surveyAnalyses.surveyId, s.id))
+        .orderBy(desc(surveyAnalyses.createdAt));
+    }
+  }
+
+  const latestAnalysis = analysis[0] ?? null;
 
   return (
     <div>
@@ -41,129 +95,109 @@ export default async function ValidatePage({
 
       <div className="mb-8">
         <h1 className="flex items-center gap-2 text-2xl font-bold">
-          <Target className="h-6 w-6 text-cyan" /> Start validation
+          <Target className="h-6 w-6 text-cyan" /> Validation
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Choose a track. Run slow first and upgrade to fast later, or go straight to paid interviews.
+          BRAINS generates the survey, you edit it, we collect responses and analyze them.
         </p>
       </div>
 
-      {/* Hypothesis summary */}
+      {/* Hypothesis */}
       {hypothesis && (
         <div className="card mb-8">
-          <h2 className="mb-4 text-sm font-semibold text-text-muted uppercase tracking-wide">
-            Your hypothesis
+          <h2 className="mb-3 text-sm font-semibold text-text-muted uppercase tracking-wide">
+            Hypothesis being validated
           </h2>
-          <div className="space-y-3 text-sm">
-            <div>
-              <span className="text-text-muted">Problem:</span>{" "}
-              <span className="text-text-primary">{hypothesis.problem}</span>
-            </div>
-            <div>
-              <span className="text-text-muted">Buyer:</span>{" "}
-              <span className="text-text-primary">{hypothesis.buyer}</span>
-            </div>
-            <div>
-              <span className="text-text-muted">Promised change:</span>{" "}
-              <span className="text-text-primary">{hypothesis.promisedChange}</span>
-            </div>
+          <div className="space-y-2 text-sm">
+            <div><span className="text-text-muted">Problem:</span> <span className="text-text-primary">{hypothesis.problem}</span></div>
+            <div><span className="text-text-muted">Buyer:</span> <span className="text-text-primary">{hypothesis.buyer}</span></div>
+            <div><span className="text-text-muted">Promised change:</span> <span className="text-text-primary">{hypothesis.promisedChange}</span></div>
           </div>
         </div>
       )}
 
-      {/* Track options */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Slow track */}
-        <div className="card">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-bg-elevated">
-              <Clock className="h-5 w-5 text-cyan" />
+      {/* If there's an active survey, show the workspace */}
+      {survey ? (
+        <SurveyWorkspace
+          survey={survey}
+          questions={questions}
+          responseCount={responseCount}
+          analysis={latestAnalysis}
+          origin={origin}
+        />
+      ) : (
+        /* No active cycle → track selection */
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Normal track */}
+          <div className="card">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-bg-elevated">
+                <Clock className="h-5 w-5 text-cyan" />
+              </div>
+              <div>
+                <h2 className="font-semibold">Normal track</h2>
+                <p className="text-xs text-text-muted">Free / organic — target ≥10 responses</p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-semibold">Slow track</h2>
-              <p className="text-xs text-text-muted">Social listening — free</p>
-            </div>
-          </div>
-          <p className="mb-6 text-sm text-text-secondary">
-            BRAINS scans social platforms and web for real discussions about your problem.
-            Evidence is scored and clustered. Good for early signal.
-          </p>
-          <ul className="mb-6 space-y-2 text-xs text-text-secondary">
-            <li>✓ Find where the problem is discussed organically</li>
-            <li>✓ Score evidence by frequency, intensity, workaround mentions</li>
-            <li>✓ Get a directional confidence indicator</li>
-          </ul>
-          <form action={startValidationCycle}>
-            <input type="hidden" name="ideaId" value={id} />
-            <input type="hidden" name="track" value="slow" />
-            <input type="hidden" name="cycleNumber" value={nextCycleNumber} />
-            <button type="submit" className="btn-secondary w-full">
-              Start slow track
-            </button>
-          </form>
-        </div>
-
-        {/* Fast track */}
-        <div className="card border-cyan/30">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan/10">
-              <Zap className="h-5 w-5 text-cyan" />
-            </div>
-            <div>
-              <h2 className="font-semibold">Fast track</h2>
-              <p className="text-xs text-text-muted">Paid human interviews — 1-2 weeks</p>
-            </div>
-          </div>
-          <p className="mb-6 text-sm text-text-secondary">
-            BRAINS contacts real people from your target audience and runs structured interviews.
-            Human analysts review all AI analysis before it ships to you.
-          </p>
-          <ul className="mb-6 space-y-2 text-xs text-text-secondary">
-            <li>✓ Real interviews with target users + niche experts</li>
-            <li>✓ Structured notes and signal tagging per interview</li>
-            <li>✓ Human-reviewed analysis delivered in 1-2 weeks</li>
-          </ul>
-          <form action={startValidationCycle}>
-            <input type="hidden" name="ideaId" value={id} />
-            <input type="hidden" name="track" value="fast" />
-            <input type="hidden" name="cycleNumber" value={nextCycleNumber} />
-            <button type="submit" className="btn-primary w-full">
-              Start fast track
-            </button>
-          </form>
-        </div>
-      </div>
-
-      {/* Generate interview prompts */}
-      {hypothesis && (
-        <div className="mt-8 card">
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="font-semibold">Generate interview prompts</h2>
-              <p className="mt-1 text-sm text-text-secondary">
-                AI-generated, non-leading prompts based on your hypothesis. Use them for your own interviews or the fast track.
-              </p>
-            </div>
-            <form action={generatePrompts}>
+            <p className="mb-6 text-sm text-text-secondary">
+              BRAINS generates a problem-focused survey. You share the link, collect responses
+              organically, and the analysis engine runs the ≥50% gate.
+            </p>
+            <ul className="mb-6 space-y-2 text-xs text-text-secondary">
+              <li>✓ Auto-generated, editable questionnaire</li>
+              <li>✓ Shareable link for respondents</li>
+              <li>✓ Analysis engine + ≥50% decision gate</li>
+              <li>✓ Re-run in a new cycle if the gate fails</li>
+            </ul>
+            <form action={startValidationCycle}>
               <input type="hidden" name="ideaId" value={id} />
-              <input type="hidden" name="problem" value={hypothesis.problem} />
-              <input type="hidden" name="buyer" value={hypothesis.buyer} />
-              <input type="hidden" name="promisedChange" value={hypothesis.promisedChange} />
-              <input type="hidden" name="whyNow" value={hypothesis.whyNow ?? ""} />
-              <button type="submit" className="btn-secondary gap-2">
-                <TrendingUp className="h-4 w-4" /> Generate prompts
+              <input type="hidden" name="track" value="slow" />
+              <input type="hidden" name="cycleNumber" value={nextCycleNumber} />
+              <button type="submit" className="btn-secondary w-full">
+                Start normal track
+              </button>
+            </form>
+          </div>
+
+          {/* Fast track */}
+          <div className="card border-cyan/30">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan/10">
+                <Zap className="h-5 w-5 text-cyan" />
+              </div>
+              <div>
+                <h2 className="font-semibold">Fast track</h2>
+                <p className="text-xs text-text-muted">Paid niche experts — ~5 responses</p>
+              </div>
+            </div>
+            <p className="mb-6 text-sm text-text-secondary">
+              BRAINS generates a focused survey. You hire niche experts to fill it (paid, ~1hr),
+              and the analysis engine runs the same ≥50% gate.
+            </p>
+            <ul className="mb-6 space-y-2 text-xs text-text-secondary">
+              <li>✓ Focused, high-signal questionnaire</li>
+              <li>✓ Expert responses flagged as paid</li>
+              <li>✓ Analysis engine + ≥50% decision gate</li>
+              <li>✓ Re-run in a new cycle if the gate fails</li>
+            </ul>
+            <form action={startValidationCycle}>
+              <input type="hidden" name="ideaId" value={id} />
+              <input type="hidden" name="track" value="fast" />
+              <input type="hidden" name="cycleNumber" value={nextCycleNumber} />
+              <button type="submit" className="btn-primary w-full">
+                Start fast track
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Existing cycles */}
-      {cycles.length > 0 && (
+      {/* Previous cycles */}
+      {cycles.length > 1 && (
         <div className="mt-8">
           <h2 className="mb-4 text-lg font-semibold">Previous cycles</h2>
           <div className="space-y-3">
-            {cycles.map((c) => (
+            {cycles.slice(1).map((c) => (
               <Link
                 key={c.id}
                 href={`/dashboard/ideas/${id}/cycles/${c.id}`}
@@ -186,6 +220,26 @@ export default async function ValidatePage({
               </Link>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Re-run option (if latest cycle is completed) */}
+      {latestCycle?.status === "completed" && (
+        <div className="mt-8 card flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold">Re-run validation</h3>
+            <p className="mt-1 text-sm text-text-secondary">
+              Start a new cycle with a revised survey. The old cycle is preserved.
+            </p>
+          </div>
+          <form action={startValidationCycle}>
+            <input type="hidden" name="ideaId" value={id} />
+            <input type="hidden" name="track" value={latestCycle.track} />
+            <input type="hidden" name="cycleNumber" value={nextCycleNumber} />
+            <button type="submit" className="btn-primary gap-2">
+              <Target className="h-4 w-4" /> New cycle
+            </button>
+          </form>
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, integer, varchar, jsonb, pgEnum, numeric } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, integer, varchar, jsonb, pgEnum, numeric, boolean } from "drizzle-orm/pg-core";
 
 // ─── Enums ───
 
@@ -261,5 +261,89 @@ export const interviewPrompts = pgTable("interview_prompts", {
   prompt: text("prompt").notNull(),
   category: varchar("category", { length: 100 }),  // problem, urgency, budget, workflow, etc.
   order: integer("order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Surveys / Questionnaires (BRAINS-controlled validation) ───
+
+export const surveyStatus = pgEnum("survey_status", [
+  "draft",
+  "published",
+  "closed",
+]);
+
+// Surveys — one per validation cycle. BRAINS generates a draft the founder edits.
+export const surveys = pgTable("surveys", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  cycleId: uuid("cycle_id")
+    .notNull()
+    .references(() => validationCycles.id, { onDelete: "cascade" }),
+  ideaId: uuid("idea_id")
+    .notNull()
+    .references(() => ideas.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 500 }).notNull(),
+  intro: text("intro"),                       // shown to respondents before questions
+  status: surveyStatus("status").default("draft").notNull(),
+  track: validationTrack("track").notNull(),  // fast = paid experts, slow = organic
+  outreachMessage: text("outreach_message"),  // ready-to-send message with link placeholder
+  targetCount: integer("target_count").default(10).notNull(), // min responses (10 normal, fewer fast)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Survey questions — editable by the founder. The gating question is flagged.
+export const surveyQuestions = pgTable("survey_questions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  surveyId: uuid("survey_id")
+    .notNull()
+    .references(() => surveys.id, { onDelete: "cascade" }),
+  question: text("question").notNull(),
+  category: varchar("category", { length: 100 }),  // problem, urgency, budget, workflow, etc.
+  order: integer("order").default(0).notNull(),
+  isGating: boolean("is_gating").default(false).notNull(), // the ≥50% gate question
+  isRequired: boolean("is_required").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Survey responses — one per respondent who fills the questionnaire.
+export const surveyResponses = pgTable("survey_responses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  surveyId: uuid("survey_id")
+    .notNull()
+    .references(() => surveys.id, { onDelete: "cascade" }),
+  respondentName: varchar("respondent_name", { length: 255 }),
+  respondentEmail: varchar("respondent_email", { length: 255 }),
+  isExpert: boolean("is_expert").default(false).notNull(),  // fast track: paid niche expert
+  isPaid: boolean("is_paid").default(false).notNull(),
+  problemExperienced: varchar("problem_experienced", { length: 20 }), // yes | no | unclear (set by analysis agent)
+  submittedAt: timestamp("submitted_at").defaultNow().notNull(),
+});
+
+// Survey answers — individual question answers within a response.
+export const surveyAnswers = pgTable("survey_answers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  responseId: uuid("response_id")
+    .notNull()
+    .references(() => surveyResponses.id, { onDelete: "cascade" }),
+  questionId: uuid("question_id")
+    .notNull()
+    .references(() => surveyQuestions.id, { onDelete: "cascade" }),
+  answer: text("answer").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Survey analyses — the analysis engine's final output per survey.
+export const surveyAnalyses = pgTable("survey_analyses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  surveyId: uuid("survey_id")
+    .notNull()
+    .references(() => surveys.id, { onDelete: "cascade" }),
+  analysis: jsonb("analysis").notNull(),          // full structured analysis
+  gatePassed: boolean("gate_passed").notNull(),   // ≥50% experienced the problem
+  problemExperiencedPct: numeric("problem_experienced_pct", { precision: 5, scale: 2 }).notNull(),
+  verdict: verdictEnum("verdict"),                // maps to engine verdict
+  summary: text("summary").notNull(),
+  recommendation: text("recommendation").notNull(), // proceed | diagnose-and-rerun | kill
+  respondentBreakdown: jsonb("respondent_breakdown"), // per-respondent scoring
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

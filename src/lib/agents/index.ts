@@ -14,4 +14,6 @@ export { researchAgent } from "./research";
 export { validationAgent, scoreSignal } from "./validation";
 export { verdictAgent } from "./verdict";
 export { evaluateAgent } from "./evaluation";
+export { surveyGeneratorAgent } from "./survey";
+export { responseAnalysisAgent } from "./analysis";
 export type * from "./types";
