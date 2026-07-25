@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Brain, Check } from "lucide-react";
 
 export default function SurveyThankYou() {

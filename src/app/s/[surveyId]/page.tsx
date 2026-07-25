@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { Brain } from "lucide-react";
 import { submitSurveyResponse } from "@/app/dashboard/ideas/[id]/validate/actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function PublicSurveyPage({
   params,
 }: {

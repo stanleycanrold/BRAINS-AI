@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { createIdea } from "./actions";
 
 export default function NewIdeaPage() {

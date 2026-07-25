@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { IdeaCapture } from "@/components/idea-capture";
 import { LandingNav } from "@/components/landing-nav";
 import { Brain, Search, MessageSquareText, TrendingUp } from "lucide-react";

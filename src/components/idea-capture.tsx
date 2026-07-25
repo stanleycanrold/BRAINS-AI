@@ -40,7 +40,7 @@ export function IdeaCapture({ compact = false }: { compact?: boolean }) {
       e.preventDefault();
       sessionStorage.setItem(PENDING_KEY, idea.trim());
       setBusy(true);
-      openSignUp({ afterAuthUrl: window.location.href });
+      openSignUp({ fallbackRedirectUrl: window.location.href });
       return;
     }
     setBusy(true);
