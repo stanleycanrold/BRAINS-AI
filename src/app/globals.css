@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-geist-sans: "Geist", system-ui, sans-serif;
+    --font-geist-mono: "Geist Mono", monospace;
+  }
+
+  * {
+    border-color: theme("colors.bg.border");
+  }
+
+  body {
+    background-color: theme("colors.bg.base");
+    color: theme("colors.text.primary");
+    font-family: var(--font-geist-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-cyan px-4 py-2.5 text-sm font-medium text-bg-base transition-colors hover:bg-cyan-hover disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-bg-border bg-bg-surface px-4 py-2.5 text-sm font-medium text-text-primary transition-colors hover:border-cyan-muted hover:bg-bg-elevated;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center rounded-lg bg-pink px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-pink-hover;
+  }
+
+  .input-field {
+    @apply w-full rounded-lg border border-bg-border bg-bg-surface px-4 py-3 text-text-primary placeholder:text-text-muted transition-colors focus:border-cyan focus:outline-none focus:ring-1 focus:ring-cyan;
+  }
+
+  .card {
+    @apply rounded-xl border border-bg-border bg-bg-surface p-6;
+  }
+
+  .card-elevated {
+    @apply rounded-xl border border-bg-border bg-bg-elevated p-6;
+  }
+
+  .label {
+    @apply mb-2 block text-sm font-medium text-text-secondary;
+  }
+}
