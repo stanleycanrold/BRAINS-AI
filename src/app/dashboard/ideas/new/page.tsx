@@ -1,116 +1,111 @@
 export const dynamic = "force-dynamic";
 
-import { currentUser } from "@clerk/nextjs/server";
 import { Header } from "@/components/ui/header";
 import { Card, Button } from "@/components/ui/index";
-import { CheckCircle2, ArrowRight } from "lucide-react";
+import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { createIdea } from "./actions";
 
 export default async function IdeaEntryPage() {
-  const user = await currentUser();
-
   return (
     <>
-      <Header
-        title="Idea Entry Point"
-        status="RESEARCHING"
-      />
+      <Header title="Idea Entry Point" subtitle="Capture the full context now so every later stage reasons from the same versioned record." status="RESEARCHING" />
 
-      <div className="space-y-8">
-        {/* Main form section */}
-        <div className="max-w-4xl">
-          {/* Heading */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-text-primary">
-              Build the Future.
-            </h2>
-            <p className="mt-2 text-text-secondary">
-              Our Intelligence Analyst AI is ready to parse your vision. Provide
-              the core details below to begin the structural validation process.
-            </p>
-          </div>
+      <div className="mx-auto max-w-5xl space-y-8 py-8">
+        <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
+          <Card elevated className="space-y-6">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-primary">Stage 1 · Capture</p>
+              <h2 className="mt-2 text-3xl font-semibold text-text-primary">Describe what you are building and why it matters.</h2>
+              <p className="mt-3 text-sm leading-6 text-text-secondary">
+                This is the foundation for the entire engine. The app saves a versioned context record so research and validation can build on the same source of truth.
+              </p>
+            </div>
 
-          {/* Form */}
-          <form action={createIdea} className="space-y-6">
-            <Card elevated>
-              {/* What are you building */}
-              <div className="space-y-6">
-                <div>
-                  <label className="label uppercase tracking-wide text-xs text-text-muted">
-                    What are you building?
-                  </label>
-                  <textarea
-                    name="description"
-                    placeholder="Describe the core problem, your solution, and the unique mechanism that makes it work..."
-                    className="input-field h-32 resize-none"
-                  />
-                </div>
-
-                {/* Venture Stage */}
-                <div>
-                  <label className="label uppercase tracking-wide text-xs text-text-muted">
-                    Venture Stage
-                  </label>
-                  <div className="grid grid-cols-3 gap-4">
-                    {[
-                      { id: "idea", label: "Idea only", icon: "💡" },
-                      { id: "prototype", label: "MVP built", icon: "🚀" },
-                      { id: "live_product", label: "Live with users", icon: "📈" },
-                    ].map((stage) => (
-                      <label key={stage.id} className="cursor-pointer">
-                        <input
-                          type="radio"
-                          name="stage"
-                          value={stage.id}
-                          defaultChecked={stage.id === "idea"}
-                          className="peer sr-only"
-                        />
-                        <div className="rounded-lg border-2 border-bg-border bg-bg-surface p-4 text-center transition-all peer-checked:border-primary peer-checked:bg-primary-light">
-                          <div className="text-2xl mb-2">{stage.icon}</div>
-                          <div className="font-medium text-text-primary">
-                            {stage.label}
-                          </div>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Note about structural validation */}
-                <div className="rounded-lg bg-bg-elevated p-4 text-sm text-text-secondary">
-                  Your idea is encrypted and private in BRAINS AI
-                </div>
-
-                {/* Next Step Button */}
-                <div className="flex justify-end pt-4">
-                  <Button className="gap-2">
-                    Next Step: Structural Validation
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+            <form action={createIdea} className="space-y-6">
+              <div className="space-y-2">
+                <label className="label" htmlFor="title">Idea title</label>
+                <input id="title" name="title" className="input-field" placeholder="Name the idea or wedge" required />
+              </div>
+              <div className="space-y-2">
+                <label className="label" htmlFor="description">What are you building?</label>
+                <textarea id="description" name="description" className="input-field h-32 resize-none" placeholder="Describe the problem, your solution, and the core value proposition." required />
+              </div>
+              <div className="space-y-2">
+                <label className="label">Venture stage</label>
+                <div className="grid gap-3 md:grid-cols-3">
+                  {[
+                    { id: "idea", label: "Idea only", icon: "💡" },
+                    { id: "prototype", label: "Prototype", icon: "🚀" },
+                    { id: "live_product", label: "Live product", icon: "📈" },
+                  ].map((stage) => (
+                    <label key={stage.id} className="cursor-pointer">
+                      <input type="radio" name="stage" value={stage.id} defaultChecked={stage.id === "idea"} className="peer sr-only" />
+                      <div className="rounded-lg border border-bg-border bg-bg-surface p-4 text-center transition-all peer-checked:border-primary peer-checked:bg-primary-light">
+                        <div className="mb-2 text-2xl">{stage.icon}</div>
+                        <div className="font-medium text-text-primary">{stage.label}</div>
+                      </div>
+                    </label>
+                  ))}
                 </div>
               </div>
-            </Card>
-          </form>
-        </div>
-
-        {/* Benefits section */}
-        <div className="max-w-4xl space-y-4 pt-8">
-          <h3 className="font-semibold text-text-primary">
-            What happens next
-          </h3>
-          <div className="grid gap-4 md:grid-cols-2">
-            {[
-              "Our AI will research your problem space and competitors",
-              "We'll identify your riskiest assumptions",
-              "You'll choose: validate via social listening or paid expert interviews",
-              "Get a decision-grade verdict with AI-powered next steps",
-            ].map((benefit, i) => (
-              <div key={i} className="flex gap-3 text-sm">
-                <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-success" />
-                <span className="text-text-secondary">{benefit}</span>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="label" htmlFor="targetUser">Target user</label>
+                  <input id="targetUser" name="targetUser" className="input-field" placeholder="Who feels the pain most?" />
+                </div>
+                <div className="space-y-2">
+                  <label className="label" htmlFor="problem">Pain / problem</label>
+                  <input id="problem" name="problem" className="input-field" placeholder="What is the friction or unmet need?" />
+                </div>
               </div>
-            ))}
-          </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="label" htmlFor="solution">Proposed solution</label>
+                  <input id="solution" name="solution" className="input-field" placeholder="What is the proposed answer?" />
+                </div>
+                <div className="space-y-2">
+                  <label className="label" htmlFor="whyNow">Why now?</label>
+                  <input id="whyNow" name="whyNow" className="input-field" placeholder="What changed to make this timely?" />
+                </div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="label" htmlFor="competitors">Competitors / alternatives</label>
+                  <input id="competitors" name="competitors" className="input-field" placeholder="What exists already?" />
+                </div>
+                <div className="space-y-2">
+                  <label className="label" htmlFor="websiteUrl">Website / links</label>
+                  <input id="websiteUrl" name="websiteUrl" className="input-field" placeholder="https://" />
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Button className="gap-2">
+                  Continue to research
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </form>
+          </Card>
+
+          <Card className="space-y-4">
+            <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.25em] text-text-muted">
+              <Sparkles className="h-4 w-4 text-primary" />
+              What happens next
+            </div>
+            <div className="space-y-3">
+              {[
+                "The context is saved as a versioned record and reused in later stages.",
+                "Research will sharpen the problem, ICP, and differentiator.",
+                "You will choose slow or fast validation and receive a decision-grade verdict.",
+              ].map((item) => (
+                <div key={item} className="flex gap-3 rounded-lg border border-bg-border bg-bg-surface p-3 text-sm text-text-secondary">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-success" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
         </div>
       </div>
     </>

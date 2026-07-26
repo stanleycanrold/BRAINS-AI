@@ -1,191 +1,146 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
+import { db } from "@/db";
+import { ideas, ideaContextRevisions, validationCycles, verdicts } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { Header } from "@/components/ui/header";
 import { Card, Badge, Button } from "@/components/ui/index";
-import { 
-  MessageSquareText, 
-  Zap, 
-  CheckCircle2, 
-  AlertCircle,
-  Copy 
-} from "lucide-react";
+import { ArrowRight, CheckCircle2, Sparkles, RefreshCcw } from "lucide-react";
 
 interface IdeaDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function IdeaDetailPage({ 
-  params,
-}: IdeaDetailPageProps) {
+export default async function IdeaDetailPage({ params }: IdeaDetailPageProps) {
   const { id } = await params;
+  const [idea] = await db.select().from(ideas).where(eq(ideas.id, id)).limit(1);
+  const revisions = await db
+    .select()
+    .from(ideaContextRevisions)
+    .where(eq(ideaContextRevisions.ideaId, id))
+    .orderBy(desc(ideaContextRevisions.revisionNumber));
+  const cycles = await db
+    .select()
+    .from(validationCycles)
+    .where(eq(validationCycles.ideaId, id))
+    .orderBy(desc(validationCycles.createdAt));
 
-  // TODO: Fetch idea data from database
-  // const idea = await getIdea(id);
+  if (!idea) {
+    return null;
+  }
+
+  const latestRevision = revisions[0];
+  const latestCycle = cycles[0];
 
   return (
     <>
       <Header
-        title="NeuralScribe: Automated Medical Transcription"
-        subtitle="Tracing the evolution of the venture from its original core hypothesis to the current validated pivot. Each node represents a distinct AI-driven validation cycle."
-        status="VALIDATING"
+        title={idea.title}
+        subtitle="Every cycle references the same evolving context so the loop stays auditable and comparable."
+        status={idea.status === "validated" ? "VALIDATING" : idea.status === "researching" ? "RESEARCHING" : "BUILDING"}
+        breadcrumb={["Ideas", idea.title]}
+        steps={[
+          { label: "Entry", href: `/dashboard/ideas/${id}`, current: true, complete: true },
+          { label: "Research", href: `/dashboard/ideas/${id}/research`, complete: Boolean(revisions.length) },
+          { label: "Validate", href: `/dashboard/ideas/${id}/validate`, complete: Boolean(cycles.length) },
+          { label: "Decide", href: `/dashboard/ideas/${id}/cycles/${latestCycle?.id ?? "new"}`, complete: Boolean(latestCycle?.verdict) },
+        ]}
+        actions={
+          <Link href={`/dashboard/ideas/${id}/research`}>
+            <Button variant="secondary" className="gap-2">
+              <RefreshCcw className="h-4 w-4" />
+              Strengthen idea
+            </Button>
+          </Link>
+        }
       />
 
-      <div className="space-y-8">
-        {/* Timeline Section */}
-        <div>
-          <h3 className="font-semibold text-text-primary mb-6">Idea Timeline</h3>
-          
-          <div className="relative">
-            {/* Timeline track */}
-            <div className="absolute left-6 top-0 bottom-0 w-1 bg-bg-border" />
-
-            {/* Timeline items */}
-            <div className="space-y-6">
-              {/* Cycle 1 */}
-              <div className="relative pl-20">
-                <div className="absolute -left-1 top-2 w-4 h-4 rounded-full bg-primary border-4 border-white" />
-                <Card>
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="font-semibold text-text-primary">
-                        v3 - Specialized ER Context Mapping
-                      </h4>
-                      <p className="text-sm text-text-muted">Validated on Sep 21, 2025</p>
-                    </div>
-                    <Badge variant="success">92/100</Badge>
-                  </div>
-                  <p className="text-sm text-text-secondary mb-4">
-                    Niche focus on Emergency Room environment noise-filtering.
-                  </p>
-                  <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div>
-                      <p className="text-xs text-text-muted uppercase tracking-wide">Core Issue</p>
-                      <p className="text-sm font-medium text-text-primary">
-                        CHART INPUT
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-text-muted uppercase tracking-wide">Primary Use</p>
-                      <p className="text-sm font-medium text-text-primary">
-                        Head of ER Operations
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-text-muted uppercase tracking-wide">Value Prop</p>
-                      <p className="text-sm font-medium text-success">
-                        Reduce burnout by 40%
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <button className="text-sm text-primary hover:underline flex items-center gap-1">
-                      📄 Full Report
-                    </button>
-                    <button className="text-sm text-primary hover:underline flex items-center gap-1">
-                      📊 Raw Data
-                    </button>
-                  </div>
-                </Card>
+      <div className="mx-auto max-w-5xl space-y-8 py-8">
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <Card elevated className="space-y-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-primary">Current context</p>
+                <h3 className="mt-2 text-2xl font-semibold text-text-primary">{latestRevision?.description || idea.title}</h3>
               </div>
-
-              {/* Cycle 2 */}
-              <div className="relative pl-20">
-                <div className="absolute -left-1 top-2 w-4 h-4 rounded-full bg-warning border-4 border-white" />
-                <Card>
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="font-semibold text-text-primary">
-                        v2 - General Medical Scribe Interface
-                      </h4>
-                      <p className="text-sm text-text-muted">Initiated on Sep 17, 2025</p>
-                    </div>
-                    <Badge variant="warning">64/100</Badge>
-                  </div>
-                  <p className="text-sm text-text-secondary mb-4">
-                    Critical Friction Point: General practitioners called interface fatigue and lack of specialized vocabulary for complex surgical notes.
-                  </p>
-                  <div className="flex gap-3">
-                    <button className="text-sm text-primary hover:underline flex items-center gap-1">
-                      👁️ View Analysis
-                    </button>
-                    <button className="text-sm text-primary hover:underline flex items-center gap-1">
-                      🔄 Review Changes
-                    </button>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Cycle 3 */}
-              <div className="relative pl-20">
-                <div className="absolute -left-1 top-2 w-4 h-4 rounded-full bg-text-muted border-4 border-white" />
-                <Card className="opacity-60">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="font-semibold text-text-primary">
-                        v1 - Direct-to-Patient Health Logger
-                      </h4>
-                      <p className="text-sm text-text-muted">Initiated on Aug 30, 2025</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-text-secondary mb-4">
-                    Original core idea focusing on consumers logging symptoms. Strategic decision to pivot to B2B due to low retention signals...
-                  </p>
-                  <div className="flex gap-3">
-                    <button className="text-sm text-primary hover:underline">View Details</button>
-                  </div>
-                </Card>
-              </div>
+              <Badge variant={idea.status === "validated" ? "success" : idea.status === "researching" ? "warning" : "primary"}>
+                {idea.status}
+              </Badge>
             </div>
-          </div>
+            <dl className="grid gap-4 text-sm md:grid-cols-2">
+              <div className="rounded-lg border border-bg-border bg-bg-surface p-4">
+                <dt className="text-xs uppercase tracking-[0.2em] text-text-muted">Stage</dt>
+                <dd className="mt-1 font-medium text-text-primary">{idea.currentStage}</dd>
+              </div>
+              <div className="rounded-lg border border-bg-border bg-bg-surface p-4">
+                <dt className="text-xs uppercase tracking-[0.2em] text-text-muted">Target user</dt>
+                <dd className="mt-1 font-medium text-text-primary">{latestRevision?.targetUser || "To be defined"}</dd>
+              </div>
+              <div className="rounded-lg border border-bg-border bg-bg-surface p-4">
+                <dt className="text-xs uppercase tracking-[0.2em] text-text-muted">Problem</dt>
+                <dd className="mt-1 font-medium text-text-primary">{latestRevision?.problem || "To be defined"}</dd>
+              </div>
+              <div className="rounded-lg border border-bg-border bg-bg-surface p-4">
+                <dt className="text-xs uppercase tracking-[0.2em] text-text-muted">Why now</dt>
+                <dd className="mt-1 font-medium text-text-primary">{latestRevision?.whyNow || "To be defined"}</dd>
+              </div>
+            </dl>
+          </Card>
+
+          <Card className="space-y-4">
+            <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.25em] text-text-muted">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Next step
+            </div>
+            <p className="text-sm leading-6 text-text-secondary">
+              Research sharpens the idea before spending validation efforts. Once that pass is complete, you can move straight into slow or fast validation.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link href={`/dashboard/ideas/${id}/research`}>
+                <Button className="gap-2">
+                  Run research
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href={`/dashboard/ideas/${id}/validate`}>
+                <Button variant="secondary">Validate</Button>
+              </Link>
+            </div>
+          </Card>
         </div>
 
-        {/* Next Steps */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card elevated>
-            <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-              <Zap className="h-5 w-5 text-warning" />
-              Next Steps Recommended
-            </h4>
-            <ul className="space-y-3 text-sm">
-              <li className="flex gap-2">
-                <CheckCircle2 className="h-4 w-4 text-success flex-shrink-0 mt-0.5" />
-                <span className="text-text-secondary">
-                  Niche focus on Emergency Room is validated. Propose integration with Epic EHR system.
-                </span>
-              </li>
-              <li className="flex gap-2">
-                <CheckCircle2 className="h-4 w-4 text-success flex-shrink-0 mt-0.5" />
-                <span className="text-text-secondary">
-                  High willingness to pay for the MVP feature set.
-                </span>
-              </li>
-              <li className="flex gap-2">
-                <AlertCircle className="h-4 w-4 text-warning flex-shrink-0 mt-0.5" />
-                <span className="text-text-secondary">
-                  Competitive latency. Interview 2-3 procurement officers (tier-1 Urban Hospital).
-                </span>
-              </li>
-            </ul>
-          </Card>
-
-          <Card elevated>
-            <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-              <MessageSquareText className="h-5 w-5 text-primary" />
-              Run Another Cycle
-            </h4>
-            <p className="text-sm text-text-secondary mb-4">
-              Based on recent learnings, refine your positioning and validate with another fast-track round or social listening cycle.
-            </p>
-            <div className="flex gap-3">
-              <Button variant="secondary" className="text-sm">
-                Normal Track
-              </Button>
-              <Button className="text-sm gap-2">
-                <Zap className="h-4 w-4" />
-                Fast Track
-              </Button>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold text-text-primary">Cycle history</h3>
+            <Link href={`/dashboard/ideas/${id}/validate`} className="text-sm font-medium text-primary">Start a new validation cycle</Link>
+          </div>
+          {cycles.length === 0 ? (
+            <Card className="text-sm text-text-secondary">No validation cycles yet. Start the slow or fast track when you are ready.</Card>
+          ) : (
+            <div className="space-y-4">
+              {cycles.map((cycle) => (
+                <Card key={cycle.id} className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <p className="font-semibold text-text-primary">Cycle {cycle.cycleNumber}</p>
+                      <Badge variant={cycle.status === "completed" ? "success" : "warning"}>{cycle.track}</Badge>
+                    </div>
+                    <p className="mt-1 text-sm text-text-secondary">{cycle.status}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {cycle.verdict ? <Badge variant="success">{cycle.verdict}</Badge> : <Badge variant="warning">Pending</Badge>}
+                    <Link href={`/dashboard/ideas/${id}/cycles/${cycle.id}`}>
+                      <Button variant="secondary" className="gap-2">
+                        <CheckCircle2 className="h-4 w-4" />
+                        View report
+                      </Button>
+                    </Link>
+                  </div>
+                </Card>
+              ))}
             </div>
-          </Card>
+          )}
         </div>
       </div>
     </>

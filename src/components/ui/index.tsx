@@ -8,7 +8,7 @@ interface CardProps {
 
 export function Card({ children, className = "", elevated = false }: CardProps) {
   return (
-    <div className={elevated ? "card-elevated" : "card"}>
+    <div className={`${elevated ? "card-elevated" : "card"} ${className}`.trim()}>
       {children}
     </div>
   );
@@ -30,7 +30,7 @@ export function Badge({ children, variant = "primary", className = "" }: BadgePr
   }[variant];
 
   return (
-    <span className={`${baseClass} ${variantClass} ${className}`}>
+    <span className={`${baseClass} ${variantClass} ${className}`.trim()}>
       {children}
     </span>
   );
@@ -45,6 +45,7 @@ export function Button({
   variant = "primary",
   children,
   className = "",
+  type = "button",
   ...props
 }: ButtonProps) {
   const baseClass = {
@@ -55,7 +56,7 @@ export function Button({
   }[variant];
 
   return (
-    <button className={`${baseClass} ${className}`} {...props}>
+    <button type={type} className={`${baseClass} ${className}`.trim()} {...props}>
       {children}
     </button>
   );

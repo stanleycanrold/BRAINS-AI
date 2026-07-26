@@ -1,48 +1,45 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  content: [
-    "./src/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
+  content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
       colors: {
-        // BRAINS AI design tokens (matching design mockups)
         bg: {
-          base: "#FFFFFF",
-          surface: "#FAFBFC",
-          elevated: "#F5F7FA",
-          border: "#E5E7EB",
+          base: "#F7F8FA",
+          surface: "#FFFFFF",
+          elevated: "#EEF0F2",
+          border: "#DEE1E5",
         },
         primary: {
-          DEFAULT: "#0052CC",
-          hover: "#0042A3",
-          light: "#E3F0FF",
-          dark: "#003399",
+          DEFAULT: "#14267A",
+          hover: "#0F1F58",
+          light: "#EEF2FF",
+          dark: "#0C1754",
         },
         success: {
-          DEFAULT: "#00BFA5",
-          light: "#E0F7F4",
-          muted: "#4DD0C1",
+          DEFAULT: "#2F8F5B",
+          light: "#EAF7EF",
+          muted: "#7ECFA3",
         },
         warning: {
-          DEFAULT: "#FF9500",
-          light: "#FFF3E0",
-          muted: "#FFB74D",
+          DEFAULT: "#C67C1E",
+          light: "#FCF2E7",
+          muted: "#E5B475",
         },
         danger: {
-          DEFAULT: "#E74C3C",
-          light: "#FADBD8",
-          muted: "#F5B7B1",
+          DEFAULT: "#B3433D",
+          light: "#FBEDEC",
+          muted: "#D18D89",
         },
         text: {
-          primary: "#1F2937",
-          secondary: "#6B7280",
-          muted: "#9CA3AF",
+          primary: "#14181F",
+          secondary: "#6B7480",
+          muted: "#9AA2AB",
         },
         sidebar: {
-          bg: "#F0F4FB",
-          active: "#E3F0FF",
+          bg: "#F7F8FA",
+          active: "#EEF2FF",
         },
       },
       fontFamily: {

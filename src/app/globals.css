@@ -6,6 +6,15 @@
   :root {
     --font-geist-sans: "Geist", system-ui, sans-serif;
     --font-geist-mono: "Geist Mono", monospace;
+    --surface-page: #f7f8fa;
+    --surface-raised: #ffffff;
+    --border-default: #dee1e5;
+    --text-primary: #14181f;
+    --text-secondary: #6b7480;
+    --accent-brand: #14267a;
+    --status-success: #2f8f5b;
+    --status-caution: #c67c1e;
+    --status-danger: #b3433d;
   }
 
   * {
@@ -13,8 +22,8 @@
   }
 
   body {
-    background-color: theme("colors.bg.base");
-    color: theme("colors.text.primary");
+    background-color: var(--surface-page);
+    color: var(--text-primary);
     font-family: var(--font-geist-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -23,19 +32,19 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-bg-border bg-bg-surface px-4 py-2.5 text-sm font-semibold text-text-primary transition-colors hover:border-primary hover:bg-primary-light;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-bg-border bg-bg-surface px-4 py-2.5 text-sm font-semibold text-text-primary transition-all duration-200 hover:border-primary hover:bg-primary-light;
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-danger px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-danger-muted;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-danger bg-transparent px-4 py-2.5 text-sm font-semibold text-danger transition-all duration-200 hover:bg-danger-light;
   }
 
   .btn-success {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-success px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-success-muted;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-success bg-transparent px-4 py-2.5 text-sm font-semibold text-success transition-all duration-200 hover:bg-success-light;
   }
 
   .input-field {
@@ -47,7 +56,7 @@
   }
 
   .card-elevated {
-    @apply rounded-xl border border-bg-border bg-white p-6 shadow-md;
+    @apply rounded-xl border border-bg-border bg-white p-6 shadow-sm;
   }
 
   .label {
