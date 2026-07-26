@@ -70,9 +70,9 @@ export default async function DashboardOverview() {
                           </h3>
                           <div className="mt-2 flex flex-wrap gap-2">
                             <Badge variant="primary">
-                              {idea.stage === "idea"
+                              {idea.currentStage === "idea"
                                 ? "💡 Idea"
-                                : idea.stage === "prototype"
+                                : idea.currentStage === "prototype"
                                 ? "🚀 MVP"
                                 : "📈 Live"}
                             </Badge>
@@ -80,7 +80,8 @@ export default async function DashboardOverview() {
                               variant={
                                 idea.status === "validated"
                                   ? "success"
-                                  : idea.status === "in_progress"
+                                  : idea.status === "researching" ||
+                                    idea.status === "validating"
                                   ? "warning"
                                   : "primary"
                               }
@@ -91,8 +92,12 @@ export default async function DashboardOverview() {
                         </div>
                       </div>
 
-                      <p className="text-sm text-text-secondary line-clamp-3">
-                        {idea.description}
+                      <p className="text-sm text-text-secondary">
+                        {idea.currentStage === "idea"
+                          ? "Idea stage"
+                          : idea.currentStage === "prototype"
+                          ? "Prototype stage"
+                          : "Live product"}
                       </p>
 
                       <div className="flex items-center justify-between text-sm">
@@ -130,37 +135,5 @@ export default async function DashboardOverview() {
         </div>
       </div>
     </>
-  );
-}
-
-        {userIdeas.length === 0 ? (
-          <div className="card flex flex-col items-center justify-center py-16 text-center">
-            <Lightbulb className="mb-4 h-10 w-10 text-text-muted" />
-            <p className="max-w-sm text-sm text-text-secondary">
-              No ideas yet. Capture your first one above — BRAINS will structure
-              it into a testable hypothesis.
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-3">
-            {userIdeas.map((idea) => (
-              <Link
-                key={idea.id}
-                href={`/dashboard/ideas/${idea.id}`}
-                className="card flex items-center justify-between transition-colors hover:border-cyan-muted"
-              >
-                <div>
-                  <p className="font-medium text-text-primary">{idea.title}</p>
-                  <p className="mt-1 text-xs text-text-muted">
-                    {idea.status} · {idea.currentStage.replace("_", " ")}
-                  </p>
-                </div>
-                <ArrowRight className="h-4 w-4 text-text-muted" />
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
   );
 }

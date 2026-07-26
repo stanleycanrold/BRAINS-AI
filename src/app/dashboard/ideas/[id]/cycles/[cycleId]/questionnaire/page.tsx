@@ -183,7 +183,7 @@ export default async function QuestionnaireBuilderPage({
                     value="app.brains.ai/v/founder"
                     className="input-field text-sm flex-1"
                   />
-                  <Button variant="secondary" size="sm" className="gap-2">
+                  <Button variant="secondary" className="gap-2 px-3">
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
