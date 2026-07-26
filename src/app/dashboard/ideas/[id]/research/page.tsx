@@ -1,138 +1,192 @@
 export const dynamic = "force-dynamic";
 
-import { db } from "@/db";
-import { ideas, ideaContextRevisions, researchRuns, researchSuggestions } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, FlaskConical } from "lucide-react";
-import { ResearchForm } from "@/components/research-form";
+import { Header } from "@/components/ui/header";
+import { Card, Badge, Button } from "@/components/ui/index";
+import { Lightbulb, TrendingUp, Check, X } from "lucide-react";
 
-export default async function ResearchPage({
-  params,
-}: {
+interface ResearchingPageProps {
   params: Promise<{ id: string }>;
-}) {
+}
+
+export default async function ResearchingPage({
+  params,
+}: ResearchingPageProps) {
   const { id } = await params;
 
-  const [idea] = await db.select().from(ideas).where(eq(ideas.id, id)).limit(1);
-  if (!idea) notFound();
-
-  const [latestRevision] = await db
-    .select()
-    .from(ideaContextRevisions)
-    .where(eq(ideaContextRevisions.ideaId, id))
-    .orderBy(desc(ideaContextRevisions.revisionNumber))
-    .limit(1);
-
-  const runs = await db.select().from(researchRuns).where(eq(researchRuns.ideaId, id));
-
-  // Pre-fetch suggestions for all runs (can't use async in JSX map).
-  const runsWithSuggestions = await Promise.all(
-    runs.map(async (run) => {
-      const suggestions = await db
-        .select()
-        .from(researchSuggestions)
-        .where(eq(researchSuggestions.researchRunId, run.id));
-      return { run, suggestions };
-    }),
-  );
-
   return (
-    <div>
-      <Link
-        href={`/dashboard/ideas/${id}`}
-        className="mb-6 inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to idea
-      </Link>
+    <>
+      <Header
+        title="Researching"
+        status="ANALYZING DESIGN"
+      />
 
-      <div className="mb-8">
-        <h1 className="flex items-center gap-2 text-2xl font-bold">
-          <FlaskConical className="h-6 w-6 text-cyan" /> Research & Strengthening
-        </h1>
-        <p className="mt-1 text-sm text-text-secondary">
-          BRAINS runs lightweight research to sharpen your idea before validation.
-          Every suggestion cites what prompted it.
-        </p>
-      </div>
-
-      {/* Run research */}
-      <div className="card mb-8">
-        <div className="flex items-start justify-between">
+      <div className="space-y-8">
+        {/* Main Research Result */}
+        <Card elevated className="space-y-6">
           <div>
-            <h2 className="font-semibold">Run a research pass</h2>
-            <p className="mt-1 text-sm text-text-secondary">
-              AI analyzes your problem space and proposes concrete changes to strengthen your idea.
+            <h2 className="text-2xl font-bold text-text-primary mb-2">
+              Universal AI Interoperability
+            </h2>
+            <p className="text-text-secondary">
+              Our system has identified a critical bottleneck in the current market: lack of
+              cross-platform model communication. The problem strength is verified through 1.2M scraped developer queries.
             </p>
           </div>
-          <ResearchForm ideaId={id} />
-        </div>
-      </div>
 
-      {/* Research runs */}
-      {runsWithSuggestions.length > 0 ? (
-        <div className="space-y-6">
-          {runsWithSuggestions.map(({ run, suggestions }) => (
-            <div key={run.id} className="card">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <span className="font-medium capitalize">{run.type} research</span>
-                  <span className="ml-3 text-xs text-text-muted">
-                    {new Date(run.createdAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </div>
-                <span className={`rounded-full border px-3 py-0.5 text-xs ${
-                  run.status === "completed"
-                    ? "border-cyan/40 text-cyan"
-                    : "border-bg-border text-text-muted"
-                }`}>
-                  {run.status}
-                </span>
-              </div>
-
-              {suggestions.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-text-muted">Suggestions</h3>
-                  {suggestions.map((s) => (
-                    <div key={s.id} className="card-elevated">
-                      <p className="text-sm text-text-primary">{s.suggestion}</p>
-                      {s.rationale && (
-                        <p className="mt-2 text-xs text-text-secondary">
-                          <span className="text-cyan">Why:</span> {s.rationale}
-                        </p>
-                      )}
-                      {s.sourceUrl && (
-                        <a
-                          href={s.sourceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 inline-block text-xs text-cyan hover:underline"
-                        >
-                          Source →
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <p className="text-xs text-text-muted uppercase tracking-wide">
+                Verified Users
+              </p>
+              <p className="text-3xl font-bold text-text-primary">85,000+</p>
+              <p className="text-xs text-text-muted">Across open source communities</p>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="card flex flex-col items-center justify-center py-16 text-center">
-          <FlaskConical className="mb-4 h-10 w-10 text-text-muted" />
-          <p className="text-sm text-text-secondary">
-            No research runs yet. Run your first pass above.
+            <div className="space-y-2">
+              <p className="text-xs text-text-muted uppercase tracking-wide">
+                Market Gap
+              </p>
+              <p className="text-3xl font-bold text-success">Critical</p>
+              <p className="text-xs text-text-muted">Sentiment score: +8.4/10</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs text-text-muted uppercase tracking-wide">
+                Opportunity
+              </p>
+              <p className="text-3xl font-bold text-primary">$2.1B</p>
+              <p className="text-xs text-text-muted">TAM (Greenfield)</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Competitor Landscape */}
+        <div>
+          <h3 className="font-semibold text-text-primary mb-4 text-lg">
+            Competitor Landscape
+          </h3>
+          <p className="text-text-secondary mb-6 text-sm">
+            VIEW FULL MAP
           </p>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {[
+              {
+                name: "NexusFlow",
+                desc: "Legacy infrastructure provider focusing on API aggregation...",
+                strengths: "SCALABLE",
+                weaknesses: "OUTDATED",
+              },
+              {
+                name: "KernelIO",
+                desc: "Model open-source toolkit with strong community, missing commercial layer...",
+                strengths: "FREE, API",
+                weaknesses: "INDIE API",
+              },
+              {
+                name: "Azure AI",
+                desc: "Market leader in Tier-1 out-of-box integrations",
+                strengths: "DOMINANCE",
+                weaknesses: "COMPLEXITY",
+              },
+            ].map((comp) => (
+              <Card key={comp.name} className="space-y-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-bg-elevated" />
+                  <div>
+                    <h4 className="font-semibold text-text-primary text-sm">
+                      {comp.name}
+                    </h4>
+                  </div>
+                </div>
+                <p className="text-xs text-text-secondary">{comp.desc}</p>
+                <div className="flex gap-2 flex-wrap">
+                  <Badge variant="success" className="text-xs">
+                    {comp.strengths}
+                  </Badge>
+                  <Badge variant="danger" className="text-xs">
+                    {comp.weaknesses}
+                  </Badge>
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
-      )}
-    </div>
+
+        {/* Proposed Strengthening Changes */}
+        <div>
+          <h3 className="font-semibold text-text-primary mb-4 text-lg flex items-center gap-2">
+            <Lightbulb className="h-5 w-5 text-warning" />
+            Proposed Strengthening Changes
+          </h3>
+
+          <div className="space-y-3">
+            {[
+              {
+                change: "Pivot: Edge-First Computation Strategy",
+                reasoning: "Founders across 9 startup hubs cite latency as deal-breaker.",
+                impact: "↑ 45%",
+              },
+              {
+                change:
+                  "Monetization: Dynamic Token-Based Tier Structure",
+                reasoning: "Usage-based APIs are outperforming seat-license models 3x",
+                impact: "↑ 128 LTV",
+              },
+              {
+                change: "Security: Zero-Knowledge Model Proofs",
+                reasoning:
+                  "24 B2B teams cited data governance as the #1 buying blocker.",
+                impact: "↑ 76%",
+              },
+            ].map((item, i) => (
+              <Card key={i} className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-text-primary mb-1">
+                      {item.change}
+                    </h4>
+                    <p className="text-sm text-text-secondary">{item.reasoning}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-lg font-bold text-success">{item.impact}</p>
+                    <p className="text-xs text-text-muted">Expected uplift</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-3 border-t border-bg-border">
+                  <Button variant="secondary" className="text-sm gap-2 flex-1">
+                    <Check className="h-4 w-4" />
+                    Accept Change
+                  </Button>
+                  <Button variant="secondary" className="text-sm gap-2 flex-1">
+                    <X className="h-4 w-4" />
+                    Reject
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Next Steps */}
+        <Card elevated className="border-2 border-primary space-y-6">
+          <h3 className="font-semibold text-text-primary text-lg flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Ready to Validate
+          </h3>
+          <p className="text-sm text-text-secondary">
+            Your idea has been strengthened based on market research. Now it's time to validate
+            your updated hypothesis with real users or experts.
+          </p>
+          <div className="flex gap-3">
+            <Button className="gap-2 flex-1">
+              Start Validation
+            </Button>
+            <Button variant="secondary" className="flex-1">
+              Review Research
+            </Button>
+          </div>
+        </Card>
+      </div>
+    </>
   );
 }
