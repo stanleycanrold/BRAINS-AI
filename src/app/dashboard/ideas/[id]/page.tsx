@@ -1,377 +1,193 @@
 export const dynamic = "force-dynamic";
 
-import { db } from "@/db";
-import {
-  ideas,
-  ideaContextRevisions,
-  researchRuns,
-  researchSuggestions,
-  validationCycles,
-  verdicts,
-  hypotheses,
-  assumptions,
-  interviewPrompts,
-} from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, History, FlaskConical, Target, MessageSquare, TrendingUp, FileSearch } from "lucide-react";
+import { Header } from "@/components/ui/header";
+import { Card, Badge, Button } from "@/components/ui/index";
+import { 
+  MessageSquareText, 
+  Zap, 
+  CheckCircle2, 
+  AlertCircle,
+  Copy 
+} from "lucide-react";
 
-const verdictColors: Record<string, string> = {
-  strong_yes: "text-cyan border-cyan/40 bg-cyan/10",
-  lean_yes: "text-cyan border-cyan/30 bg-cyan/5",
-  mixed: "text-text-secondary border-bg-border bg-bg-elevated",
-  lean_no: "text-pink border-pink/30 bg-pink/5",
-  strong_no: "text-pink border-pink/40 bg-pink/10",
-};
-
-const verdictLabels: Record<string, string> = {
-  strong_yes: "Strong Yes",
-  lean_yes: "Lean Yes",
-  mixed: "Mixed",
-  lean_no: "Lean No",
-  strong_no: "Strong No",
-};
-
-const stageLabels: Record<string, string> = {
-  idea: "💡 Idea",
-  prototype: "🔨 Prototype",
-  live_product: "🚀 Live",
-};
-
-export default async function IdeaDetailPage({
-  params,
-}: {
+interface IdeaDetailPageProps {
   params: Promise<{ id: string }>;
-}) {
+}
+
+export default async function IdeaDetailPage({ 
+  params,
+}: IdeaDetailPageProps) {
   const { id } = await params;
 
-  const [idea] = await db.select().from(ideas).where(eq(ideas.id, id)).limit(1);
-  if (!idea) notFound();
-
-  const [latestRevision, revisions, runs, cycles, hypothesisList, assumptionList, promptList] =
-    await Promise.all([
-      db
-        .select()
-        .from(ideaContextRevisions)
-        .where(eq(ideaContextRevisions.ideaId, id))
-        .orderBy(desc(ideaContextRevisions.revisionNumber))
-        .limit(1),
-      db
-        .select()
-        .from(ideaContextRevisions)
-        .where(eq(ideaContextRevisions.ideaId, id))
-        .orderBy(desc(ideaContextRevisions.revisionNumber)),
-      db.select().from(researchRuns).where(eq(researchRuns.ideaId, id)),
-      db
-        .select()
-        .from(validationCycles)
-        .where(eq(validationCycles.ideaId, id))
-        .orderBy(desc(validationCycles.cycleNumber)),
-      db.select().from(hypotheses).where(eq(hypotheses.ideaId, id)),
-      db.select().from(assumptions).where(eq(assumptions.ideaId, id)),
-      db.select().from(interviewPrompts).where(eq(interviewPrompts.ideaId, id)),
-    ]);
-
-  const ctx = latestRevision[0];
-  const latestCycle = cycles[0];
+  // TODO: Fetch idea data from database
+  // const idea = await getIdea(id);
 
   return (
-    <div>
-      <Link
-        href="/dashboard/ideas"
-        className="mb-6 inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to ideas
-      </Link>
+    <>
+      <Header
+        title="NeuralScribe: Automated Medical Transcription"
+        subtitle="Tracing the evolution of the venture from its original core hypothesis to the current validated pivot. Each node represents a distinct AI-driven validation cycle."
+        status="VALIDATING"
+      />
 
-      {/* Header */}
-      <div className="mb-8 flex items-start justify-between">
+      <div className="space-y-8">
+        {/* Timeline Section */}
         <div>
-          <h1 className="text-2xl font-bold">{idea.title}</h1>
-          <div className="mt-2 flex items-center gap-3">
-            <span className="text-xs text-text-muted">
-              {stageLabels[idea.currentStage] ?? idea.currentStage}
-            </span>
-            <span className="rounded-full border border-bg-border px-3 py-0.5 text-xs text-text-muted">
-              {idea.status}
-            </span>
-          </div>
-        </div>
-      </div>
+          <h3 className="font-semibold text-text-primary mb-6">Idea Timeline</h3>
+          
+          <div className="relative">
+            {/* Timeline track */}
+            <div className="absolute left-6 top-0 bottom-0 w-1 bg-bg-border" />
 
-      {/* Stage progress bar */}
-      <div className="mb-8 flex items-center gap-2 overflow-x-auto">
-        {[
-          { key: "capture", label: "Capture", icon: FileSearch, done: true },
-          { key: "research", label: "Research", icon: FlaskConical, done: runs.length > 0 },
-          { key: "validate", label: "Validate", icon: Target, done: cycles.length > 0 },
-          { key: "verdict", label: "Verdict", icon: TrendingUp, done: !!latestCycle?.verdict },
-        ].map((step, i) => (
-          <div key={step.key} className="flex items-center gap-2">
-            <div
-              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
-                step.done
-                  ? "border-cyan/40 bg-cyan/10 text-cyan"
-                  : "border-bg-border bg-bg-surface text-text-muted"
-              }`}
-            >
-              <step.icon className="h-3.5 w-3.5" />
-              {step.label}
-            </div>
-            {i < 3 && <div className="h-px w-6 bg-bg-border" />}
-          </div>
-        ))}
-      </div>
-
-      {/* Context */}
-      {ctx && (
-        <div className="grid gap-4 md:grid-cols-2">
-          {ctx.description && (
-            <div className="card md:col-span-2">
-              <h3 className="mb-2 text-sm font-medium text-text-muted">The idea</h3>
-              <p className="text-text-primary">{ctx.description}</p>
-            </div>
-          )}
-          {ctx.problem && (
-            <div className="card">
-              <h3 className="mb-2 text-sm font-medium text-text-muted">Problem</h3>
-              <p className="text-sm text-text-primary">{ctx.problem}</p>
-            </div>
-          )}
-          {ctx.audience && (
-            <div className="card">
-              <h3 className="mb-2 text-sm font-medium text-text-muted">Audience</h3>
-              <p className="text-sm text-text-primary">{ctx.audience}</p>
-            </div>
-          )}
-          {ctx.targetUser && (
-            <div className="card">
-              <h3 className="mb-2 text-sm font-medium text-text-muted">Target user (ICP)</h3>
-              <p className="text-sm text-text-primary">{ctx.targetUser}</p>
-            </div>
-          )}
-          {ctx.solution && (
-            <div className="card">
-              <h3 className="mb-2 text-sm font-medium text-text-muted">Solution hypothesis</h3>
-              <p className="text-sm text-text-primary">{ctx.solution}</p>
-            </div>
-          )}
-          {ctx.whyNow && (
-            <div className="card">
-              <h3 className="mb-2 text-sm font-medium text-text-muted">Why now</h3>
-              <p className="text-sm text-text-primary">{ctx.whyNow}</p>
-            </div>
-          )}
-          {ctx.productDesc && (
-            <div className="card md:col-span-2">
-              <h3 className="mb-2 text-sm font-medium text-text-muted">Product description</h3>
-              <p className="text-sm text-text-primary">{ctx.productDesc}</p>
-            </div>
-          )}
-          {ctx.traction && (
-            <div className="card">
-              <h3 className="mb-2 text-sm font-medium text-text-muted">Traction</h3>
-              <p className="text-sm text-text-primary">{ctx.traction}</p>
-            </div>
-          )}
-          {ctx.competitors && (
-            <div className="card">
-              <h3 className="mb-2 text-sm font-medium text-text-muted">Competitors</h3>
-              <p className="text-sm text-text-primary">{ctx.competitors}</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Action bar */}
-      <div className="mt-8 flex flex-wrap gap-3">
-        <Link
-          href={`/dashboard/ideas/${id}/research`}
-          className="btn-secondary gap-2"
-        >
-          <FlaskConical className="h-4 w-4" /> Run research
-        </Link>
-        <Link
-          href={`/dashboard/ideas/${id}/validate`}
-          className="btn-primary gap-2"
-        >
-          <Target className="h-4 w-4" /> Start validation
-        </Link>
-      </div>
-
-      {/* Hypothesis */}
-      {hypothesisList.length > 0 && (
-        <div className="mt-8">
-          <h2 className="mb-4 text-lg font-semibold">Hypothesis</h2>
-          {hypothesisList.map((h) => (
-            <div key={h.id} className="card-elevated space-y-3">
-              <div>
-                <span className="text-xs text-text-muted">Problem</span>
-                <p className="text-sm text-text-primary">{h.problem}</p>
-              </div>
-              <div>
-                <span className="text-xs text-text-muted">Buyer</span>
-                <p className="text-sm text-text-primary">{h.buyer}</p>
-              </div>
-              <div>
-                <span className="text-xs text-text-muted">Promised change</span>
-                <p className="text-sm text-text-primary">{h.promisedChange}</p>
-              </div>
-              {h.whyNow && (
-                <div>
-                  <span className="text-xs text-text-muted">Why now</span>
-                  <p className="text-sm text-text-primary">{h.whyNow}</p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Assumptions */}
-      {assumptionList.length > 0 && (
-        <div className="mt-8">
-          <h2 className="mb-4 text-lg font-semibold">Ranked assumptions</h2>
-          <div className="space-y-3">
-            {assumptionList
-              .sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99))
-              .map((a) => (
-                <div key={a.id} className="card-elevated flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-bg-base text-xs text-text-muted">
-                      {a.rank ?? "?"}
-                    </span>
-                    <p className="text-sm text-text-primary">{a.text}</p>
+            {/* Timeline items */}
+            <div className="space-y-6">
+              {/* Cycle 1 */}
+              <div className="relative pl-20">
+                <div className="absolute -left-1 top-2 w-4 h-4 rounded-full bg-primary border-4 border-white" />
+                <Card>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h4 className="font-semibold text-text-primary">
+                        v3 - Specialized ER Context Mapping
+                      </h4>
+                      <p className="text-sm text-text-muted">Validated on Sep 21, 2025</p>
+                    </div>
+                    <Badge variant="success">92/100</Badge>
                   </div>
-                  <span className="ml-4 rounded-full border border-bg-border px-3 py-0.5 text-xs text-text-muted">
-                    {a.risk} risk
-                  </span>
-                </div>
-              ))}
+                  <p className="text-sm text-text-secondary mb-4">
+                    Niche focus on Emergency Room environment noise-filtering.
+                  </p>
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <p className="text-xs text-text-muted uppercase tracking-wide">Core Issue</p>
+                      <p className="text-sm font-medium text-text-primary">
+                        CHART INPUT
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-muted uppercase tracking-wide">Primary Use</p>
+                      <p className="text-sm font-medium text-text-primary">
+                        Head of ER Operations
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-muted uppercase tracking-wide">Value Prop</p>
+                      <p className="text-sm font-medium text-success">
+                        Reduce burnout by 40%
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button className="text-sm text-primary hover:underline flex items-center gap-1">
+                      📄 Full Report
+                    </button>
+                    <button className="text-sm text-primary hover:underline flex items-center gap-1">
+                      📊 Raw Data
+                    </button>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Cycle 2 */}
+              <div className="relative pl-20">
+                <div className="absolute -left-1 top-2 w-4 h-4 rounded-full bg-warning border-4 border-white" />
+                <Card>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h4 className="font-semibold text-text-primary">
+                        v2 - General Medical Scribe Interface
+                      </h4>
+                      <p className="text-sm text-text-muted">Initiated on Sep 17, 2025</p>
+                    </div>
+                    <Badge variant="warning">64/100</Badge>
+                  </div>
+                  <p className="text-sm text-text-secondary mb-4">
+                    Critical Friction Point: General practitioners called interface fatigue and lack of specialized vocabulary for complex surgical notes.
+                  </p>
+                  <div className="flex gap-3">
+                    <button className="text-sm text-primary hover:underline flex items-center gap-1">
+                      👁️ View Analysis
+                    </button>
+                    <button className="text-sm text-primary hover:underline flex items-center gap-1">
+                      🔄 Review Changes
+                    </button>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Cycle 3 */}
+              <div className="relative pl-20">
+                <div className="absolute -left-1 top-2 w-4 h-4 rounded-full bg-text-muted border-4 border-white" />
+                <Card className="opacity-60">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h4 className="font-semibold text-text-primary">
+                        v1 - Direct-to-Patient Health Logger
+                      </h4>
+                      <p className="text-sm text-text-muted">Initiated on Aug 30, 2025</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-text-secondary mb-4">
+                    Original core idea focusing on consumers logging symptoms. Strategic decision to pivot to B2B due to low retention signals...
+                  </p>
+                  <div className="flex gap-3">
+                    <button className="text-sm text-primary hover:underline">View Details</button>
+                  </div>
+                </Card>
+              </div>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Interview prompts */}
-      {promptList.length > 0 && (
-        <div className="mt-8">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-            <MessageSquare className="h-5 w-5 text-cyan" />
-            Interview prompts
-          </h2>
-          <div className="space-y-3">
-            {promptList
-              .sort((a, b) => a.order - b.order)
-              .map((p) => (
-                <div key={p.id} className="card-elevated">
-                  {p.category && (
-                    <span className="mb-2 block text-xs text-cyan">{p.category}</span>
-                  )}
-                  <p className="text-sm text-text-primary">{p.prompt}</p>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
-
-      {/* Research runs */}
-      {runs.length > 0 && (
-        <div className="mt-8">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-            <FlaskConical className="h-5 w-5 text-cyan" />
-            Research runs
-          </h2>
-          <div className="space-y-3">
-            {runs.map((r) => (
-              <div key={r.id} className="card-elevated flex items-center justify-between">
-                <div>
-                  <span className="text-sm font-medium text-text-primary capitalize">{r.type}</span>
-                  <span className="ml-3 text-xs text-text-muted">
-                    {new Date(r.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <span className={`rounded-full border px-3 py-0.5 text-xs ${
-                  r.status === "completed"
-                    ? "border-cyan/40 text-cyan"
-                    : "border-bg-border text-text-muted"
-                }`}>
-                  {r.status}
+        {/* Next Steps */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card elevated>
+            <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
+              <Zap className="h-5 w-5 text-warning" />
+              Next Steps Recommended
+            </h4>
+            <ul className="space-y-3 text-sm">
+              <li className="flex gap-2">
+                <CheckCircle2 className="h-4 w-4 text-success flex-shrink-0 mt-0.5" />
+                <span className="text-text-secondary">
+                  Niche focus on Emergency Room is validated. Propose integration with Epic EHR system.
                 </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+              </li>
+              <li className="flex gap-2">
+                <CheckCircle2 className="h-4 w-4 text-success flex-shrink-0 mt-0.5" />
+                <span className="text-text-secondary">
+                  High willingness to pay for the MVP feature set.
+                </span>
+              </li>
+              <li className="flex gap-2">
+                <AlertCircle className="h-4 w-4 text-warning flex-shrink-0 mt-0.5" />
+                <span className="text-text-secondary">
+                  Competitive latency. Interview 2-3 procurement officers (tier-1 Urban Hospital).
+                </span>
+              </li>
+            </ul>
+          </Card>
 
-      {/* Validation cycles */}
-      {cycles.length > 0 && (
-        <div className="mt-8">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-            <Target className="h-5 w-5 text-cyan" />
-            Validation cycles
-          </h2>
-          <div className="space-y-3">
-            {cycles.map((c) => (
-              <Link
-                key={c.id}
-                href={`/dashboard/ideas/${id}/cycles/${c.id}`}
-                className="card-elevated flex items-center justify-between transition-colors hover:border-cyan-muted"
-              >
-                <div className="flex items-center gap-4">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-bg-base text-sm font-bold text-cyan">
-                    {c.cycleNumber}
-                  </span>
-                  <div>
-                    <span className="text-sm font-medium text-text-primary capitalize">
-                      {c.track} track
-                    </span>
-                    <span className="ml-3 text-xs text-text-muted">
-                      {new Date(c.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {c.verdict && (
-                    <span className={`rounded-full border px-3 py-0.5 text-xs ${verdictColors[c.verdict]}`}>
-                      {verdictLabels[c.verdict]}
-                    </span>
-                  )}
-                  <span className="text-xs text-text-muted">{c.status}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <Card elevated>
+            <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
+              <MessageSquareText className="h-5 w-5 text-primary" />
+              Run Another Cycle
+            </h4>
+            <p className="text-sm text-text-secondary mb-4">
+              Based on recent learnings, refine your positioning and validate with another fast-track round or social listening cycle.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="secondary" className="text-sm">
+                Normal Track
+              </Button>
+              <Button className="text-sm gap-2">
+                <Zap className="h-4 w-4" />
+                Fast Track
+              </Button>
+            </div>
+          </Card>
         </div>
-      )}
-
-      {/* Context history */}
-      {revisions.length > 0 && (
-        <div className="mt-8">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-            <History className="h-5 w-5 text-cyan" />
-            Context history ({revisions.length})
-          </h2>
-          <div className="space-y-3">
-            {revisions.map((rev) => (
-              <div key={rev.id} className="card-elevated flex items-center justify-between">
-                <div>
-                  <span className="text-sm font-medium text-cyan">v{rev.revisionNumber}</span>
-                  <span className="ml-3 text-sm text-text-secondary">
-                    {new Date(rev.createdAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }

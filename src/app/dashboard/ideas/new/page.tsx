@@ -1,245 +1,118 @@
 export const dynamic = "force-dynamic";
 
+import { currentUser } from "@clerk/nextjs/server";
+import { Header } from "@/components/ui/header";
+import { Card, Button } from "@/components/ui/index";
+import { CheckCircle2, ArrowRight } from "lucide-react";
 import { createIdea } from "./actions";
 
-export default function NewIdeaPage() {
+export default async function IdeaEntryPage() {
+  const user = await currentUser();
+
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">Capture a new idea</h1>
-        <p className="mt-1 text-sm text-text-secondary">
-          Don&apos;t overthink it. Raw is fine — BRAINS will help you structure it
-          into a testable hypothesis.
-        </p>
+    <>
+      <Header
+        title="Idea Entry Point"
+        status="RESEARCHING"
+      />
+
+      <div className="space-y-8">
+        {/* Main form section */}
+        <div className="max-w-4xl">
+          {/* Heading */}
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-text-primary">
+              Build the Future.
+            </h2>
+            <p className="mt-2 text-text-secondary">
+              Our Intelligence Analyst AI is ready to parse your vision. Provide
+              the core details below to begin the structural validation process.
+            </p>
+          </div>
+
+          {/* Form */}
+          <form action={createIdea} className="space-y-6">
+            <Card elevated>
+              {/* What are you building */}
+              <div className="space-y-6">
+                <div>
+                  <label className="label uppercase tracking-wide text-xs text-text-muted">
+                    What are you building?
+                  </label>
+                  <textarea
+                    name="description"
+                    placeholder="Describe the core problem, your solution, and the unique mechanism that makes it work..."
+                    className="input-field h-32 resize-none"
+                  />
+                </div>
+
+                {/* Venture Stage */}
+                <div>
+                  <label className="label uppercase tracking-wide text-xs text-text-muted">
+                    Venture Stage
+                  </label>
+                  <div className="grid grid-cols-3 gap-4">
+                    {[
+                      { id: "idea", label: "Idea only", icon: "💡" },
+                      { id: "prototype", label: "MVP built", icon: "🚀" },
+                      { id: "live_product", label: "Live with users", icon: "📈" },
+                    ].map((stage) => (
+                      <label key={stage.id} className="cursor-pointer">
+                        <input
+                          type="radio"
+                          name="stage"
+                          value={stage.id}
+                          defaultChecked={stage.id === "idea"}
+                          className="peer sr-only"
+                        />
+                        <div className="rounded-lg border-2 border-bg-border bg-bg-surface p-4 text-center transition-all peer-checked:border-primary peer-checked:bg-primary-light">
+                          <div className="text-2xl mb-2">{stage.icon}</div>
+                          <div className="font-medium text-text-primary">
+                            {stage.label}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Note about structural validation */}
+                <div className="rounded-lg bg-bg-elevated p-4 text-sm text-text-secondary">
+                  Your idea is encrypted and private in BRAINS AI
+                </div>
+
+                {/* Next Step Button */}
+                <div className="flex justify-end pt-4">
+                  <Button className="gap-2">
+                    Next Step: Structural Validation
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </form>
+        </div>
+
+        {/* Benefits section */}
+        <div className="max-w-4xl space-y-4 pt-8">
+          <h3 className="font-semibold text-text-primary">
+            What happens next
+          </h3>
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              "Our AI will research your problem space and competitors",
+              "We'll identify your riskiest assumptions",
+              "You'll choose: validate via social listening or paid expert interviews",
+              "Get a decision-grade verdict with AI-powered next steps",
+            ].map((benefit, i) => (
+              <div key={i} className="flex gap-3 text-sm">
+                <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-success" />
+                <span className="text-text-secondary">{benefit}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-
-      <form action={createIdea} className="space-y-6">
-        {/* Core */}
-        <div className="card space-y-6">
-          <div>
-            <label className="label" htmlFor="title">
-              Idea title <span className="text-pink">*</span>
-            </label>
-            <input
-              id="title"
-              name="title"
-              type="text"
-              required
-              placeholder="e.g. A tool that helps founders validate before building"
-              className="input-field"
-            />
-          </div>
-
-          <div>
-            <label className="label" htmlFor="description">
-              What&apos;s the idea, in your words?
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows={3}
-              placeholder="Describe it like you&apos;re telling a friend. No jargon."
-              className="input-field resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="label">
-              What stage are you at? <span className="text-pink">*</span>
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              <label className="cursor-pointer">
-                <input
-                  type="radio"
-                  name="stage"
-                  value="idea"
-                  defaultChecked
-                  className="peer sr-only"
-                />
-                <div className="rounded-lg border border-bg-border bg-bg-surface px-4 py-3 text-center text-sm transition-colors peer-checked:border-cyan peer-checked:bg-cyan/10 peer-checked:text-cyan">
-                  💡 Idea
-                </div>
-              </label>
-              <label className="cursor-pointer">
-                <input
-                  type="radio"
-                  name="stage"
-                  value="prototype"
-                  className="peer sr-only"
-                />
-                <div className="rounded-lg border border-bg-border bg-bg-surface px-4 py-3 text-center text-sm transition-colors peer-checked:border-cyan peer-checked:bg-cyan/10 peer-checked:text-cyan">
-                  🔨 Prototype
-                </div>
-              </label>
-              <label className="cursor-pointer">
-                <input
-                  type="radio"
-                  name="stage"
-                  value="live_product"
-                  className="peer sr-only"
-                />
-                <div className="rounded-lg border border-bg-border bg-bg-surface px-4 py-3 text-center text-sm transition-colors peer-checked:border-cyan peer-checked:bg-cyan/10 peer-checked:text-cyan">
-                  🚀 Live
-                </div>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Context */}
-        <div className="card space-y-6">
-          <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide">
-            Context
-          </h2>
-
-          <div>
-            <label className="label" htmlFor="problem">
-              What problem are you solving?
-            </label>
-            <textarea
-              id="problem"
-              name="problem"
-              rows={3}
-              placeholder="Describe the pain you've observed. Who hurts and how?"
-              className="input-field resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="label" htmlFor="audience">
-              Who is it for?
-            </label>
-            <textarea
-              id="audience"
-              name="audience"
-              rows={2}
-              placeholder="Be specific. 'Founders in Nairobi building their first SaaS' beats 'entrepreneurs'."
-              className="input-field resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="label" htmlFor="targetUser">
-              Target user (ICP)
-            </label>
-            <input
-              id="targetUser"
-              name="targetUser"
-              type="text"
-              placeholder="e.g. Solo founders, 25-40, pre-revenue, technical"
-              className="input-field"
-            />
-          </div>
-
-          <div>
-            <label className="label" htmlFor="solution">
-              What do you believe will solve it?
-            </label>
-            <textarea
-              id="solution"
-              name="solution"
-              rows={3}
-              placeholder="Your hypothesis for the solution. This will be tested — don't commit yet."
-              className="input-field resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="label" htmlFor="whyNow">
-              Why now?
-            </label>
-            <textarea
-              id="whyNow"
-              name="whyNow"
-              rows={2}
-              placeholder="What changed that makes this possible or urgent now?"
-              className="input-field resize-none"
-            />
-          </div>
-        </div>
-
-        {/* Build context (if applicable) */}
-        <div className="card space-y-6">
-          <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide">
-            What you&apos;re building
-          </h2>
-
-          <div>
-            <label className="label" htmlFor="productDesc">
-              Product description
-            </label>
-            <textarea
-              id="productDesc"
-              name="productDesc"
-              rows={3}
-              placeholder="What are you building (or planning to build)?"
-              className="input-field resize-none"
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="label" htmlFor="websiteUrl">
-                Website URL
-              </label>
-              <input
-                id="websiteUrl"
-                name="websiteUrl"
-                type="url"
-                placeholder="https://..."
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label className="label" htmlFor="repoUrl">
-                Repo URL
-              </label>
-              <input
-                id="repoUrl"
-                name="repoUrl"
-                type="url"
-                placeholder="https://github.com/..."
-                className="input-field"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="label" htmlFor="traction">
-              Current traction (if live)
-            </label>
-            <textarea
-              id="traction"
-              name="traction"
-              rows={2}
-              placeholder="Users, revenue, signups, anything measurable."
-              className="input-field resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="label" htmlFor="competitors">
-              Known competitors
-            </label>
-            <textarea
-              id="competitors"
-              name="competitors"
-              rows={2}
-              placeholder="Who else is doing this? What's different about your approach?"
-              className="input-field resize-none"
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-3">
-          <button type="submit" className="btn-primary">
-            Capture idea
-          </button>
-          <a href="/dashboard" className="btn-secondary">
-            Cancel
-          </a>
-        </div>
-      </form>
-    </div>
+    </>
   );
 }

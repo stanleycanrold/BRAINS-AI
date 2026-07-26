@@ -7,27 +7,42 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // nexa-brains design tokens
+        // BRAINS AI design tokens (matching design mockups)
         bg: {
-          base: "#0A0A0F",
-          surface: "#12121A",
-          elevated: "#1A1A26",
-          border: "#232333",
+          base: "#FFFFFF",
+          surface: "#FAFBFC",
+          elevated: "#F5F7FA",
+          border: "#E5E7EB",
         },
-        cyan: {
-          DEFAULT: "#00E5FF",
-          hover: "#33EAFF",
-          muted: "#0099B3",
+        primary: {
+          DEFAULT: "#0052CC",
+          hover: "#0042A3",
+          light: "#E3F0FF",
+          dark: "#003399",
         },
-        pink: {
-          DEFAULT: "#FF2E88",
-          hover: "#FF5CA0",
-          muted: "#B32063",
+        success: {
+          DEFAULT: "#00BFA5",
+          light: "#E0F7F4",
+          muted: "#4DD0C1",
+        },
+        warning: {
+          DEFAULT: "#FF9500",
+          light: "#FFF3E0",
+          muted: "#FFB74D",
+        },
+        danger: {
+          DEFAULT: "#E74C3C",
+          light: "#FADBD8",
+          muted: "#F5B7B1",
         },
         text: {
-          primary: "#F5F5F7",
-          secondary: "#A0A0B8",
-          muted: "#6B6B85",
+          primary: "#1F2937",
+          secondary: "#6B7280",
+          muted: "#9CA3AF",
+        },
+        sidebar: {
+          bg: "#F0F4FB",
+          active: "#E3F0FF",
         },
       },
       fontFamily: {
