@@ -91,3 +91,27 @@ export async function POST(
     );
   }
 }
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  try {
+    const user = await requireUser();
+    const idea = await getIdea(id, user.id);
+    if (!idea) {
+      return NextResponse.json({ error: "Idea not found." }, { status: 404 });
+    }
+    const settings = await getShareSettings(id, user.id);
+    return NextResponse.json({
+      token: settings?.shareToken ?? null,
+      includesResponses: settings?.shareIncludesResponses ?? false,
+      founderReadOnlyToken: settings?.founderReadOnlyToken ?? null,
+      founderEditorToken: settings?.founderEditorToken ?? null,
+    });
+  } catch (err) {
+    console.error(`[GET /api/ideas/${id}/share]`, err);
+    return NextResponse.json({ error: "We couldn't load sharing." }, { status: 500 });
+  }
+}

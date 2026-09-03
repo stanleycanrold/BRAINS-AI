@@ -1,13 +1,18 @@
 "use client";
-import React, { useState } from 'react';
-import { X, Copy, Check, Globe, Lock, Shield, Link2, Send } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Copy, Check, Globe, Shield, Link2, Trash2 } from 'lucide-react';
 
 interface ShareModalProps {
   workspaceId: string;
   workspaceName: string;
   isOpen: boolean;
   onClose: () => void;
-  onShowToast: (title: string, desc?: string) => void;
+  onShowToast: (title: string, desc?: string, type?: string) => void;
+}
+
+function isRealIdeaId(id: string): boolean {
+  // UUID v4 or any non-simulation id. Simulation ids start with "simulation:" or "empty"
+  return !!id && !id.startsWith("simulation") && !id.startsWith("empty") && id.length >= 16;
 }
 
 export const ShareModal: React.FC<ShareModalProps> = ({
@@ -18,25 +23,95 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   onShowToast,
 }) => {
   const [copied, setCopied] = useState(false);
-  const [accessLevel, setAccessLevel] = useState<'public' | 'restricted'>('public');
-  const [inviteEmail, setInviteEmail] = useState('');
+  const [token, setToken] = useState<string | null>(null);
+  const [includesResponses, setIncludesResponses] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") setOrigin(window.location.origin);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen || !isRealIdeaId(workspaceId)) return;
+    setLoading(true);
+    fetch(`/api/ideas/${workspaceId}/share`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.token) setToken(data.token);
+        if (typeof data?.includesResponses === "boolean") setIncludesResponses(data.includesResponses);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [isOpen, workspaceId]);
 
   if (!isOpen) return null;
 
-  const shareUrl = `https://app.nexabrains.io/w/${workspaceId}`;
+  const isReal = isRealIdeaId(workspaceId);
+  const shareUrl = token && origin ? `${origin}/s/${token}` : "";
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(shareUrl);
+  const handleCopy = async () => {
+    if (!shareUrl) return;
+    await navigator.clipboard.writeText(shareUrl);
     setCopied(true);
-    onShowToast('Share link copied to clipboard!', shareUrl);
+    onShowToast('Share link copied!', shareUrl, 'success');
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const handleInvite = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inviteEmail.trim()) return;
-    onShowToast('Invitation sent!', `Collaborator invite dispatched to ${inviteEmail}`);
-    setInviteEmail('');
+  const create = async () => {
+    setBusy("create");
+    try {
+      const res = await fetch(`/api/ideas/${workspaceId}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      setToken(data.token);
+      onShowToast('Share link created', 'Anyone with the link can view this workspace read-only (no sign-in, never indexed).', 'success');
+    } catch (e: any) {
+      onShowToast('Could not create link', e.message || 'Try again', 'error');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const revoke = async () => {
+    setBusy("revoke");
+    try {
+      const res = await fetch(`/api/ideas/${workspaceId}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "revoke" }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setToken(null);
+      onShowToast('Link revoked', 'Anyone holding the old link now sees nothing.', 'success');
+    } catch {
+      onShowToast('Could not revoke', 'Try again', 'error');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const toggleResponses = async (next: boolean) => {
+    setIncludesResponses(next);
+    setBusy("responses");
+    try {
+      const res = await fetch(`/api/ideas/${workspaceId}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "set_responses", include: next }),
+      });
+      if (!res.ok) throw new Error("Failed");
+    } catch {
+      setIncludesResponses(!next);
+      onShowToast('Could not update', 'Try again', 'error');
+    } finally {
+      setBusy(null);
+    }
   };
 
   return (
@@ -46,7 +121,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           <div>
             <h3 className="text-lg font-bold text-slate-900">Share Workspace</h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Allow investors, co-founders, or teammates to review live validation evidence.
+              Same public link as the classic dashboard — read-only, no account, never indexed.
             </p>
           </div>
           <button
@@ -58,102 +133,80 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Public Link Box */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-              Live Public Workspace URL
-            </label>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 flex items-center gap-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-700 select-all overflow-hidden">
-                <Globe className="w-4 h-4 text-indigo-600 shrink-0" />
-                <span className="truncate">{shareUrl}</span>
+          {!isReal ? (
+            <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-800">
+              This is a demo workspace. Create a real idea first — then you can generate a public link that shows exactly this dashboard view.
+            </div>
+          ) : loading ? (
+            <p className="text-xs text-slate-500">Loading sharing settings…</p>
+          ) : token ? (
+            <>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Public link — exactly this dashboard
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-700 select-all overflow-hidden">
+                    <Globe className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <span className="truncate">{shareUrl}</span>
+                  </div>
+                  <button
+                    onClick={handleCopy}
+                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs shrink-0 cursor-pointer"
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? 'Copied' : 'Copy Link'}
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1.5">Opens the same tabs you see here — Summary, Idea, Research, Validation, Verdict, History — read-only. Title is now <span className="font-semibold text-slate-700">{workspaceName || "SparkSchool"}</span>.</p>
+                <button
+                  onClick={revoke}
+                  disabled={busy === "revoke"}
+                  className="mt-2 text-xs text-slate-500 hover:text-red-600 inline-flex items-center gap-1"
+                >
+                  <Trash2 className="w-3 h-3" /> Revoke link
+                </button>
               </div>
-              <button
-                onClick={handleCopy}
-                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs shrink-0 cursor-pointer"
-              >
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied ? 'Copied' : 'Copy Link'}
-              </button>
-            </div>
-          </div>
 
-          {/* Access Mode */}
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700">Access Mode</span>
-              <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                Public Read-Only Active
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => setAccessLevel('public')}
-                className={`p-3 rounded-lg border text-left transition-all ${
-                  accessLevel === 'public'
-                    ? 'border-indigo-600 bg-indigo-50/50 text-indigo-900 font-semibold shadow-xs'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 mb-1 text-slate-900">
-                  <Globe className="w-4 h-4 text-indigo-600" />
-                  <span>Public View</span>
+              <div className="flex items-center gap-2 p-3 rounded-xl border border-slate-200/80 bg-slate-50">
+                <input
+                  type="checkbox"
+                  checked={includesResponses}
+                  onChange={(e) => toggleResponses(e.target.checked)}
+                  disabled={busy === "responses"}
+                  className="rounded"
+                />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-slate-700">Include what respondents wrote</p>
+                  <p className="text-[11px] text-slate-500">Off by default. Shared page never shows who said it or which expert ran it.</p>
                 </div>
-                <p className="text-[11px] text-slate-500 font-normal">
-                  Anyone with the link can explore data, audio snippets, and stats.
-                </p>
-              </button>
-
+              </div>
+            </>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-slate-600">
+                Create a public link for <span className="font-semibold">{workspaceName || "this workspace"}</span>. It will show exactly this dashboard view — same title (<span className="font-semibold">SparkSchool</span>), same tabs, same evidence — read-only and never indexed.
+              </p>
               <button
-                type="button"
-                onClick={() => setAccessLevel('restricted')}
-                className={`p-3 rounded-lg border text-left transition-all ${
-                  accessLevel === 'restricted'
-                    ? 'border-indigo-600 bg-indigo-50/50 text-indigo-900 font-semibold shadow-xs'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                }`}
+                onClick={create}
+                disabled={busy === "create"}
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
               >
-                <div className="flex items-center gap-1.5 mb-1 text-slate-900">
-                  <Lock className="w-4 h-4 text-slate-500" />
-                  <span>Restricted Access</span>
-                </div>
-                <p className="text-[11px] text-slate-500 font-normal">
-                  Only invited team members with approved email addresses.
-                </p>
+                <Link2 className="w-3.5 h-3.5" /> Create share link
               </button>
             </div>
+          )}
+
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center gap-2 text-[11px] text-slate-500">
+            <Shield className="w-4 h-4 text-emerald-600 shrink-0" />
+            Current public example: <a href="https://app.nexabrains.io/s/wUfwu1e-qTkQ9UTcSu_bN1u4YVGLXi8j" target="_blank" rel="noopener noreferrer" className="font-mono text-indigo-600 hover:underline truncate">/s/wUfwu1e-qTkQ9UTcSu_bN1u4YVGLXi8j</a> (SparkSchool)
           </div>
-
-          {/* Email Invite Form */}
-          <form onSubmit={handleInvite} className="space-y-2">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
-              Invite Collaborator
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="email"
-                placeholder="investor@partnerfund.vc or cofounder@startup.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                className="flex-1 px-3.5 py-2 text-xs border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Send className="w-3.5 h-3.5" />
-                Invite
-              </button>
-            </div>
-          </form>
         </div>
 
         <div className="p-4 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between text-xs text-slate-500">
           <span className="flex items-center gap-1.5">
             <Shield className="w-4 h-4 text-emerald-600" />
-            End-to-End Cryptographically Stamped
+            No account needed to open
           </span>
           <button
             onClick={onClose}
